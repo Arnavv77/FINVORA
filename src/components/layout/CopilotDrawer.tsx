@@ -143,18 +143,19 @@ export const CopilotDrawer: React.FC = () => {
     };
   }, [copilotMessages, copilotOpen]);
 
-  const handleSend = (textToSend?: string) => {
+  const handleSend = async (textToSend?: string) => {
     const text = textToSend || inputText;
     if (!text.trim()) return;
 
     setInputText('');
     setIsTyping(true);
-    sendCopilotMessage(text);
-
-    setTimeout(() => {
+    try {
+      await sendCopilotMessage(text);
+    } finally {
       setIsTyping(false);
-    }, 550);
+    }
   };
+
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {

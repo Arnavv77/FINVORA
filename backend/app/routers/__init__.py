@@ -4,6 +4,7 @@ from .risks import router as risks_router
 from .forecast import router as forecast_router
 from .simulate import router as simulate_router
 from .budget import router as budget_router
+from .copilot import router as copilot_router
 
 __all__ = [
     "dashboard_router",
@@ -12,4 +13,6 @@ __all__ = [
     "forecast_router",
     "simulate_router",
     "budget_router",
+    "copilot_router",
 ]
+

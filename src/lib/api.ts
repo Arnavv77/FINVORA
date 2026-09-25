@@ -122,3 +122,35 @@ export async function simulateScenario(
 export async function fetchDepartmentBudgets(): Promise<DepartmentBudget[]> {
   return request<DepartmentBudget[]>('/budget');
 }
+
+/**
+ * 8. Copilot AI Chat
+ */
+export interface CopilotChatApiResponse {
+  reply: string;
+  kpis: {
+    accuracy: number;
+    feasibility: number;
+    impact?: string;
+    feasibilityNote?: string;
+    auditConfidence?: 'High' | 'Very High' | 'Verified';
+  };
+  citations?: {
+    type: 'invoice' | 'vendor' | 'department' | 'risk';
+    title: string;
+    referenceId: string;
+  }[];
+  suggestedActions?: {
+    label: string;
+    actionType: 'navigate' | 'open_modal' | 'draft_proposal' | 'filter';
+    payload: string;
+  }[];
+}
+
+export async function sendCopilotChat(message: string): Promise<CopilotChatApiResponse> {
+  return request<CopilotChatApiResponse>('/copilot/chat', {
+    method: 'POST',
+    body: JSON.stringify({ message }),
+  });
+}
+

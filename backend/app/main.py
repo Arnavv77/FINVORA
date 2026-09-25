@@ -14,6 +14,7 @@ from .routers import (
     forecast_router,
     simulate_router,
     budget_router,
+    copilot_router,
 )
 
 # ── Create tables (idempotent; use Alembic for production migrations) ─────────
@@ -45,6 +46,8 @@ app.include_router(risks_router)
 app.include_router(forecast_router)
 app.include_router(simulate_router)
 app.include_router(budget_router)
+app.include_router(copilot_router)
+
 
 
 # ── Global error handler — no raw stack traces ────────────────────────────────
