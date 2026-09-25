@@ -12,7 +12,10 @@ import {
   TrendingDown,
   Receipt,
   PieChart,
-  Clock
+  Clock,
+  CheckCircle2,
+  Zap,
+  ShieldCheck
 } from 'lucide-react';
 import { useFinancial } from '../../context/FinancialContext';
 
@@ -203,6 +206,24 @@ export const CopilotDrawer: React.FC = () => {
         </div>
       </div>
 
+      {/* AI Telemetry & Quality KPIs */}
+      <div className="px-4 py-2 bg-[var(--surface-subtle)] border-b border-[var(--divider)] flex items-center justify-between text-[11px]">
+        <div className="flex items-center gap-1.5" title="Model confidence evaluated against live ERP ledger reconciliations">
+          <span className="text-[10px] uppercase font-bold tracking-wider text-[var(--text-muted)]">Accuracy</span>
+          <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">97.8%</span>
+        </div>
+        <div className="h-3 w-px bg-[var(--divider)]" />
+        <div className="flex items-center gap-1.5" title="Workflow feasibility based on company approval matrix and policy">
+          <span className="text-[10px] uppercase font-bold tracking-wider text-[var(--text-muted)]">Feasibility</span>
+          <span className="font-mono font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20">95.0%</span>
+        </div>
+        <div className="h-3 w-px bg-[var(--divider)]" />
+        <div className="flex items-center gap-1.5" title="Continuous automated audit coverage across transactions">
+          <span className="text-[10px] uppercase font-bold tracking-wider text-[var(--text-muted)]">Audited</span>
+          <span className="font-mono font-bold text-sky-600 dark:text-sky-400 bg-sky-500/10 px-1.5 py-0.5 rounded border border-sky-500/20">100% GL</span>
+        </div>
+      </div>
+
       {/* Messages Thread */}
       <div className="flex-1 overflow-y-auto p-4 space-y-3.5">
         {copilotMessages.length === 0 ? (
@@ -273,6 +294,34 @@ export const CopilotDrawer: React.FC = () => {
                   <div className="whitespace-pre-line leading-relaxed text-xs">{msg.text}</div>
                 ) : (
                   <FormattedMessage text={msg.text} />
+                )}
+
+                {/* Decision Quality & Feasibility KPIs */}
+                {msg.kpis && (
+                  <div className="pt-2 border-t border-[var(--divider)] space-y-1.5">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                        <CheckCircle2 className="w-2.5 h-2.5 shrink-0" />
+                        <span>{msg.kpis.accuracy}% Accuracy</span>
+                      </div>
+                      <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                        <Zap className="w-2.5 h-2.5 shrink-0" />
+                        <span>{msg.kpis.feasibility}% Feasibility</span>
+                      </div>
+                      {msg.kpis.impact && (
+                        <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">
+                          <ShieldCheck className="w-2.5 h-2.5 shrink-0" />
+                          <span>{msg.kpis.impact}</span>
+                        </div>
+                      )}
+                    </div>
+                    {msg.kpis.feasibilityNote && (
+                      <div className="text-[10px] text-[var(--text-muted)] flex items-center gap-1 pl-0.5">
+                        <span className="font-medium text-[var(--text-secondary)]">Feasibility:</span>
+                        <span>{msg.kpis.feasibilityNote}</span>
+                      </div>
+                    )}
+                  </div>
                 )}
 
                 {/* Sleek Source Citations footnote */}

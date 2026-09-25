@@ -255,11 +255,20 @@ export interface WorkflowRule {
   triggerCount: number;
 }
 
+export interface CopilotKPIs {
+  accuracy: number;        // e.g. 97.4 (% confidence / accuracy)
+  feasibility: number;     // e.g. 95 (% execution / implementation feasibility)
+  impact?: string;         // e.g. "₹6.80L Protected"
+  feasibilityNote?: string;// e.g. "Instant payment hold available via CFO sign-off"
+  auditConfidence?: 'High' | 'Very High' | 'Verified';
+}
+
 export interface CopilotMessage {
   id: string;
   sender: 'user' | 'finvora';
   timestamp: string;
   text: string;
+  kpis?: CopilotKPIs;
   citations?: {
     type: 'invoice' | 'vendor' | 'department' | 'risk';
     title: string;

@@ -269,6 +269,13 @@ export const FinancialProvider: React.FC<{ children: ReactNode }> = ({ children 
       sender: 'finvora',
       timestamp: 'Today',
       text: 'Good morning. Live ledger telemetry evaluated.\n\n• **Duplicate Invoice Flagged**: #INV-2024-8849 (₹6,80,000) pending payment hold\n• **Budget Variance**: Marketing & Growth is +18% over threshold\n\nHow can I assist your financial decisions today?',
+      kpis: {
+        accuracy: 98.2,
+        feasibility: 96.0,
+        impact: '₹6.80L Mitigated',
+        feasibilityNote: 'Dual ERP match verified; ready for 1-click hold',
+        auditConfidence: 'Verified'
+      },
       citations: [
         { type: 'risk', title: 'Duplicate INV-2024-8849', referenceId: 'ANOM-2024-001' },
         { type: 'department', title: 'Marketing Overrun', referenceId: 'dept-mktg' }
@@ -682,11 +689,19 @@ export const FinancialProvider: React.FC<{ children: ReactNode }> = ({ children 
       let replyText = '';
       let citations: CopilotMessage['citations'] = [];
       let suggestedActions: CopilotMessage['suggestedActions'] = [];
+      let kpis: CopilotMessage['kpis'] = undefined;
 
       const lower = text.toLowerCase();
 
       if (lower.includes('cash') || lower.includes('balance') || lower.includes('fall') || lower.includes('decline') || lower.includes('shortfall')) {
         replyText = `### Cash Balance Drivers\nProjected liquidity dips near Day 48 due to:\n• **AP Outflows**: ₹38.5L Server PO + ₹18.5L Marketing ad spend\n• **Duplicate Invoice**: ₹6.80L candidate (#INV-2024-8849)\n• **Aged Receivables**: ₹75.0L enterprise AR aged 30+ days\n\n**Recommendation**: Holding duplicate #INV-2024-8849 preserves ₹6.80L and maintains reserves above ₹25L.`;
+        kpis = {
+          accuracy: 96.8,
+          feasibility: 94.2,
+          impact: '₹6.80L Protected',
+          feasibilityNote: '1-click CFO approval hold on duplicate vendor release',
+          auditConfidence: 'Verified'
+        };
         citations = [
           { type: 'invoice', title: 'Duplicate INV-2024-8849', referenceId: 'INV-2024-8849' },
           { type: 'risk', title: 'Cash Shortage Risk', referenceId: 'ANOM-2024-001' }
@@ -697,6 +712,13 @@ export const FinancialProvider: React.FC<{ children: ReactNode }> = ({ children 
         ];
       } else if (lower.includes('invoice') || lower.includes('review') || lower.includes('duplicate')) {
         replyText = `### Invoices Requiring Review\n• **#INV-2024-8849** (Zenith Cloud): **₹6,80,000** — Critical duplicate candidate of settled #INV-8841.\n• **#INV-2024-8902** (HyperScale Systems): **₹38,50,000** — 9.1x historical spike; needs dual approval.\n• **#INV-2024-8660** (Shardul Amarchand): **₹7,50,000** — Overdue by 4 days.`;
+        kpis = {
+          accuracy: 99.2,
+          feasibility: 98.0,
+          impact: '₹45.3L Under Review',
+          feasibilityNote: 'Deterministic SAP ledger cross-match; immediate hold feasible',
+          auditConfidence: 'Verified'
+        };
         citations = [
           { type: 'invoice', title: 'INV-2024-8849 (Duplicate)', referenceId: 'INV-2024-8849' },
           { type: 'invoice', title: 'INV-2024-8902 (Outlier PO)', referenceId: 'INV-2024-8902' }
@@ -707,6 +729,13 @@ export const FinancialProvider: React.FC<{ children: ReactNode }> = ({ children 
         ];
       } else if (lower.includes('marketing') || lower.includes('budget') || lower.includes('over budget')) {
         replyText = `### Marketing Budget Variance\n• **Status**: ₹48.60L spent vs ₹45.00L allocated (**+18.0% variance**)\n• **Cause**: Unplanned festive paid acquisition push on Meta & Google Ads\n• **Remedy**: Auto-reallocation of ₹4.50L from Engineering's ₹10.0L surplus is drafted.`;
+        kpis = {
+          accuracy: 95.8,
+          feasibility: 92.0,
+          impact: '₹4.50L Rebalanced',
+          feasibilityNote: 'Engineering cost-center surplus verified in ledger',
+          auditConfidence: 'High'
+        };
         citations = [
           { type: 'department', title: 'Marketing Budget', referenceId: 'dept-mktg' },
           { type: 'risk', title: 'Budget Deviation ANOM-2024-003', referenceId: 'ANOM-2024-003' }
@@ -717,11 +746,25 @@ export const FinancialProvider: React.FC<{ children: ReactNode }> = ({ children 
         ];
       } else if (lower.includes('15 days') || lower.includes('delay') || lower.includes('late')) {
         replyText = `### 15-Day Delay Stress Test\n• **Cash Impact**: -₹22.4L during Days 20–35\n• **Minimum Reserve**: ₹1.18 Cr (runway buffer drops to 6.2 days)\n• **Assessment**: No insolvency; hold non-critical vendor disbursements to maintain cushion.`;
+        kpis = {
+          accuracy: 94.5,
+          feasibility: 89.0,
+          impact: '-₹22.4L Liquidity Swing',
+          feasibilityNote: 'Working capital adjustment via AP rescheduling is viable',
+          auditConfidence: 'High'
+        };
         suggestedActions = [
           { label: 'Open What-If Simulator', actionType: 'navigate', payload: '/what-if' }
         ];
       } else {
         replyText = `### Ledger Telemetry\nI can analyze your live enterprise ledger:\n• **Duplicate Invoices & Payment Holds**\n• **Cash Flow & Liquidity Forecasts**\n• **Department Budget Variances**\n• **What-If Scenario Simulations**`;
+        kpis = {
+          accuracy: 97.4,
+          feasibility: 95.0,
+          impact: 'Live GL Telemetry',
+          feasibilityNote: 'Verified against current GL state',
+          auditConfidence: 'Verified'
+        };
         suggestedActions = [
           { label: 'Why is cash balance declining?', actionType: 'filter', payload: 'cash_decline' },
           { label: 'Which invoices need review?', actionType: 'filter', payload: 'invoices_review' }
@@ -733,6 +776,7 @@ export const FinancialProvider: React.FC<{ children: ReactNode }> = ({ children 
         sender: 'finvora',
         timestamp: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
         text: replyText,
+        kpis,
         citations,
         suggestedActions
       };
