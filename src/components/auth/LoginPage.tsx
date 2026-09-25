@@ -69,31 +69,32 @@ export const LoginPage: React.FC = () => {
       <main className="relative z-10 flex-1 w-full max-w-[1550px] mx-auto px-6 sm:px-10 lg:px-14 py-6 sm:py-8 flex flex-col lg:flex-row items-center justify-between gap-8">
         
         {/* ── LEFT: Hero Value Proposition & Telemetry ── */}
-        <div className="w-full lg:max-w-[460px] xl:max-w-[500px] flex flex-col space-y-5 text-left">
+        <div className="w-full lg:max-w-[480px] xl:max-w-[520px] flex flex-col space-y-6 text-left">
           
           {/* Active Pipeline Status Pill */}
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-black/40 hover:bg-black/50 backdrop-blur-md border border-white/20 text-xs text-white/95 shadow-lg w-fit transition-all">
-            <span className="relative flex h-2 w-2">
+          <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-black/45 hover:bg-black/55 backdrop-blur-md border border-white/20 text-xs text-white/95 shadow-lg w-fit transition-all">
+            <span className="relative flex h-2 w-2 shrink-0">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.9)]" />
             </span>
-            <span className="font-medium tracking-tight drop-shadow-sm text-[11px] sm:text-xs">
-              Predictive AI Engine Active • Monitoring ₹1.84 Cr Cash Pipeline
+            <span className="font-medium tracking-normal text-xs text-white/95">
+              Predictive AI Engine Active &bull; Monitoring ₹1.84 Cr Cash Pipeline
             </span>
           </div>
 
-          {/* Main Headline */}
-          <h1 className="text-3xl sm:text-4xl lg:text-[50px] font-black text-white tracking-tight leading-[1.08] drop-shadow-[0_4px_16px_rgba(0,0,0,0.6)]">
-            Turn Financial Data Into <span className="text-white">Foresight.</span>
+          {/* Main Headline with relaxed line-height and clear word spacing */}
+          <h1 className="text-3xl sm:text-4xl lg:text-[46px] font-bold text-white tracking-normal leading-[1.22] drop-shadow-[0_4px_16px_rgba(0,0,0,0.6)]">
+            Turn Financial Data <br className="hidden sm:inline" />
+            Into Foresight.
           </h1>
 
           {/* Subtitle Description */}
-          <p className="text-xs sm:text-sm text-white/90 leading-relaxed font-normal max-w-md drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]">
+          <p className="text-sm text-white/90 leading-relaxed font-normal max-w-md tracking-normal drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]">
             Detect emerging risks, predict financial impact, simulate decisions, and turn financial intelligence into informed action.
           </p>
 
           {/* Action Button Row */}
-          <div className="flex flex-wrap items-center gap-3 pt-1">
+          <div className="flex flex-wrap items-center gap-3.5 pt-1">
             <button
               onClick={() => navigate('/')}
               className="px-5 py-2.5 rounded-full font-bold text-xs sm:text-sm text-white bg-blue-600 hover:bg-blue-500 shadow-xl shadow-blue-600/40 hover:shadow-blue-600/60 transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
@@ -110,29 +111,29 @@ export const LoginPage: React.FC = () => {
           </div>
 
           {/* 3 Metrics Stats Row */}
-          <div className="grid grid-cols-3 gap-4 pt-6 border-t border-white/20 max-w-md">
-            <div className="space-y-0.5">
-              <div className="text-xl sm:text-2xl font-extrabold font-mono text-white tracking-tight drop-shadow-md">
+          <div className="grid grid-cols-3 gap-5 pt-6 border-t border-white/20 max-w-lg">
+            <div className="space-y-1">
+              <div className="text-2xl sm:text-[26px] font-bold font-sans text-white tracking-normal drop-shadow-md">
                 ₹24.6L
               </div>
-              <div className="text-[10px] sm:text-[11px] text-white/80 font-medium drop-shadow-sm">
+              <div className="text-xs text-white/80 font-medium leading-snug drop-shadow-sm">
                 Active Working Capital
               </div>
             </div>
-            <div className="space-y-0.5 border-l border-white/20 pl-4">
-              <div className="text-xl sm:text-2xl font-extrabold font-mono text-white tracking-tight drop-shadow-md">
-                30 Days
+            <div className="space-y-1 border-l border-white/20 pl-4 sm:pl-5">
+              <div className="text-2xl sm:text-[26px] font-bold font-sans text-white tracking-normal drop-shadow-md">
+                60 Days
               </div>
-              <div className="text-[10px] sm:text-[11px] text-white/80 font-medium drop-shadow-sm">
+              <div className="text-xs text-white/80 font-medium leading-snug drop-shadow-sm">
                 Predictive Horizon
               </div>
             </div>
-            <div className="space-y-0.5 border-l border-white/20 pl-4">
-              <div className="text-xl sm:text-2xl font-extrabold font-mono text-white tracking-tight drop-shadow-md">
-                94.2%
+            <div className="space-y-1 border-l border-white/20 pl-4 sm:pl-5">
+              <div className="text-2xl sm:text-[26px] font-bold font-sans text-white tracking-normal drop-shadow-md">
+                70%
               </div>
-              <div className="text-[10px] sm:text-[11px] text-white/80 font-medium drop-shadow-sm">
-                Decision Confidence
+              <div className="text-xs text-white/80 font-medium leading-snug drop-shadow-sm">
+                Decision Accuracy
               </div>
             </div>
           </div>
