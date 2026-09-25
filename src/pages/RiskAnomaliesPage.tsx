@@ -148,11 +148,11 @@ export const RiskAnomaliesPage: React.FC = () => {
 
         <div className="p-4 sm:p-5 rounded-2xl glass-card border border-[var(--card-border)]">
           <div className="flex items-center justify-between text-xs text-[var(--text-secondary)] mb-1">
-            <span>Rule Engine Confidence</span>
+            <span>Rule Engine Accuracy</span>
             <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
           </div>
           <div className="text-2xl font-bold font-mono text-emerald-600 dark:text-emerald-400">
-            97.4% Avg
+            78% Avg
           </div>
           <p className="text-[11px] text-[var(--text-muted)] mt-1">ML behavioral heuristics</p>
         </div>
