@@ -70,20 +70,12 @@ export const LoginPage: React.FC = () => {
         
         {/* ── LEFT: Hero Value Proposition & Telemetry ── */}
         <div className="w-full lg:max-w-[480px] xl:max-w-[520px] flex flex-col space-y-6 text-left">
-          
-          {/* Active Pipeline Status Pill */}
-          <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-black/45 hover:bg-black/55 backdrop-blur-md border border-white/20 text-xs text-white/95 shadow-lg w-fit transition-all">
-            <span className="relative flex h-2 w-2 shrink-0">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.9)]" />
-            </span>
-            <span className="font-medium tracking-normal text-xs text-white/95">
-              Predictive AI Engine Active &bull; Monitoring ₹1.84 Cr Cash Pipeline
-            </span>
-          </div>
 
-          {/* Main Headline with relaxed line-height and clear word spacing */}
-          <h1 className="text-3xl sm:text-4xl lg:text-[46px] font-bold text-white tracking-normal leading-[1.22] drop-shadow-[0_4px_16px_rgba(0,0,0,0.6)]">
+          {/* Main Headline with generous word and line spacing */}
+          <h1
+            className="text-3xl sm:text-4xl lg:text-[48px] font-bold text-white leading-[1.32] drop-shadow-[0_4px_16px_rgba(0,0,0,0.6)]"
+            style={{ wordSpacing: '0.14em', letterSpacing: '0.02em' }}
+          >
             Turn Financial Data <br className="hidden sm:inline" />
             Into Foresight.
           </h1>
