@@ -1,4 +1,4 @@
-import { AnomalyRecord, DepartmentBudget, CashForecastPoint } from '../types';
+import { AnomalyRecord, DepartmentBudget, CashForecastPoint, FinvoraRecommendation } from '../types';
 
 const API_BASE = 'http://127.0.0.1:8000/api';
 
@@ -151,6 +151,21 @@ export async function sendCopilotChat(message: string): Promise<CopilotChatApiRe
   return request<CopilotChatApiResponse>('/copilot/chat', {
     method: 'POST',
     body: JSON.stringify({ message }),
+  });
+}
+
+export async function fetchScenarioRecommendation(
+  query: string,
+  scenarioParams?: Record<string, any>,
+  simulationResult?: Record<string, any>
+): Promise<FinvoraRecommendation> {
+  return request<FinvoraRecommendation>('/copilot/scenario-recommendation', {
+    method: 'POST',
+    body: JSON.stringify({
+      query,
+      scenario_params: scenarioParams,
+      simulation_result: simulationResult,
+    }),
   });
 }
 

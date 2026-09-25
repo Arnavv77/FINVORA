@@ -44,14 +44,15 @@ import {
   SimulationParams,
   SimulationResult,
   SavedScenario,
-  ScenarioChatMessage
+  ScenarioChatMessage,
+  FinvoraRecommendation
 } from '../types';
 import {
   DEFAULT_SIMULATION_PARAMS,
   interpretScenarioPrompt,
   calculateScenario
 } from '../utils/scenarioEngine';
-import { simulateScenario, sendCopilotChat } from '../lib/api';
+import { simulateScenario, sendCopilotChat, fetchScenarioRecommendation } from '../lib/api';
 
 const PROMPT_SUGGESTIONS = [
   'What if revenue falls by 10%?',
@@ -124,6 +125,114 @@ const CleanFormattedMessage: React.FC<{ text: string }> = ({ text }) => {
           </p>
         );
       })}
+    </div>
+  );
+};
+
+// Component to render official AI recommendation within What-If simulation chat
+const FinvoraRecommendationCard: React.FC<{
+  recommendation: FinvoraRecommendation;
+  onDraftProposal: (rec: FinvoraRecommendation) => void;
+}> = ({ recommendation, onDraftProposal }) => {
+  const [isExpanded, setIsExpanded] = useState(true);
+
+  const getRiskBadge = (risk: string) => {
+    const r = (risk || '').toLowerCase();
+    if (r === 'high') {
+      return 'bg-rose-500/10 text-rose-500 border-rose-500/20';
+    }
+    if (r === 'moderate') {
+      return 'bg-amber-500/10 text-amber-500 border-amber-500/20';
+    }
+    return 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20';
+  };
+
+  return (
+    <div className="mt-3 rounded-xl border border-amber-500/30 bg-gradient-to-br from-amber-500/5 via-[var(--surface-subtle)] to-[var(--surface-muted)] overflow-hidden shadow-xs">
+      {/* Header bar */}
+      <div
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="px-3.5 py-2.5 bg-amber-500/10 border-b border-amber-500/20 flex items-center justify-between cursor-pointer select-none"
+      >
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="w-5 h-5 rounded-md bg-amber-500 text-stone-950 flex items-center justify-center shrink-0 shadow-xs">
+            <Sparkles className="w-3 h-3 fill-current" />
+          </div>
+          <div className="truncate">
+            <span className="text-xs font-bold text-[var(--text-primary)] block truncate">
+              What FINVORA Recommends
+            </span>
+            <span className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">
+              AI Strategic Directive
+            </span>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-1.5 shrink-0">
+          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25">
+            {recommendation.feasibility_score}% Feasible
+          </span>
+          <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${getRiskBadge(recommendation.risk_level)}`}>
+            {recommendation.risk_level} Risk
+          </span>
+          {isExpanded ? (
+            <ChevronUp className="w-3.5 h-3.5 text-[var(--text-muted)]" />
+          ) : (
+            <ChevronDown className="w-3.5 h-3.5 text-[var(--text-muted)]" />
+          )}
+        </div>
+      </div>
+
+      {/* Body content */}
+      {isExpanded && (
+        <div className="p-3.5 space-y-3 text-xs">
+          <div>
+            <h4 className="text-xs font-bold text-[var(--text-primary)] leading-tight">
+              {recommendation.title.replace(/[*#]/g, '')}
+            </h4>
+            {recommendation.financial_impact && (
+              <span className="inline-block mt-1 text-[10px] font-mono px-2 py-0.5 rounded bg-[var(--card-bg)] text-[var(--text-secondary)] border border-[var(--divider)]">
+                Impact: {recommendation.financial_impact.replace(/[*#]/g, '')}
+              </span>
+            )}
+          </div>
+
+          <p className="text-[11px] leading-relaxed text-[var(--text-secondary)] bg-[var(--card-bg-elevated)] p-2.5 rounded-lg border border-[var(--divider)]">
+            {recommendation.executive_summary.replace(/[*#]/g, '')}
+          </p>
+
+          {recommendation.action_steps && recommendation.action_steps.length > 0 && (
+            <div className="space-y-1.5 pt-1">
+              <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider block">
+                Prescribed Action Steps:
+              </span>
+              <div className="space-y-1">
+                {recommendation.action_steps.map((step, idx) => (
+                  <div key={idx} className="flex items-start gap-2 text-[11px] text-[var(--text-primary)]">
+                    <span className="w-4 h-4 rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-400 font-bold text-[9px] flex items-center justify-center shrink-0 mt-0.5">
+                      {idx + 1}
+                    </span>
+                    <span className="leading-snug">{step.replace(/[*#]/g, '')}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="pt-2 border-t border-[var(--divider)] flex items-center justify-between gap-2">
+            <span className="text-[10px] text-[var(--text-muted)] italic truncate">
+              {recommendation.audit_confidence || 'Verified by Financial Ledger AI'}
+            </span>
+            <button
+              onClick={() => onDraftProposal(recommendation)}
+              className="px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-500 text-stone-950 hover:bg-amber-400 transition-colors flex items-center gap-1.5 shadow-xs shrink-0"
+            >
+              <FileText className="w-3.5 h-3.5" />
+              <span>Draft Directive Proposal</span>
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -225,6 +334,49 @@ export const WhatIfSimulatorPage: React.FC = () => {
     setInputText('');
     setIsInterpreting(true);
 
+    // Check if user is explicitly asking for a recommendation (e.g. "What does FINVORA recommend?", "recommend to do")
+    const isExplicitRec = /recommend|recommendation|advice|what should (we|i) do|finvora recommend/i.test(query);
+    if (isExplicitRec) {
+      // Find the last scenario prompt the user asked
+      const lastUserPrompt = [...messages].reverse().find(
+        m => m.sender === 'user' && !/recommend|advice/i.test(m.text)
+      )?.text || stagedParams.name || 'this scenario';
+
+      const recMsgId = `ast-${Date.now()}`;
+      const assistantMsg: ScenarioChatMessage = {
+        id: recMsgId,
+        sender: 'assistant',
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        text: `Here is FINVORA's official strategic recommendation for "${lastUserPrompt.replace(/[*#]/g, '')}":`,
+        recommendationLoading: true,
+        userQuery: lastUserPrompt,
+        followUpSuggestions: [
+          'Run scenario',
+          'What if revenue falls by 10%?',
+          'Compare with baseline'
+        ]
+      };
+      setMessages(prev => [...prev, assistantMsg]);
+      setIsInterpreting(false);
+
+      try {
+        const rec = await fetchScenarioRecommendation(lastUserPrompt, stagedParams, simulationResult);
+        setMessages(prev =>
+          prev.map(m =>
+            m.id === recMsgId
+              ? { ...m, recommendation: rec, recommendationLoading: false }
+              : m
+          )
+        );
+      } catch (err) {
+        console.error('Failed to fetch recommendation:', err);
+        setMessages(prev =>
+          prev.map(m => (m.id === recMsgId ? { ...m, recommendationLoading: false } : m))
+        );
+      }
+      return;
+    }
+
     try {
       // 1. Parse scenario levers locally with advanced multi-intent parser
       const parsed = interpretScenarioPrompt(query, stagedParams);
@@ -254,32 +406,79 @@ export const WhatIfSimulatorPage: React.FC = () => {
       };
       setStagedParams(newStaged);
 
+      const msgId = `ast-${Date.now()}`;
       const assistantMsg: ScenarioChatMessage = {
-        id: `ast-${Date.now()}`,
+        id: msgId,
         sender: 'assistant',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         text: textToDisplay,
         sourceChips: ['Reconciled AR Ledger', 'Net-30 Enterprise Terms', 'Q3 Base Plan', 'Predictive ML Engine'],
         proposedAssumptions: newStaged,
         isInterpretation: true,
-        followUpSuggestions: parsed.followUps
+        userQuery: query,
+        recommendationLoading: true,
+        followUpSuggestions: [
+          'What does FINVORA recommend for this?',
+          ...parsed.followUps
+        ]
       };
 
       setMessages(prev => [...prev, assistantMsg]);
+
+      // Concurrently fetch AI recommendation for this specific question
+      fetchScenarioRecommendation(query, newStaged, simulationResult)
+        .then(rec => {
+          setMessages(prev =>
+            prev.map(m =>
+              m.id === msgId
+                ? { ...m, recommendation: rec, recommendationLoading: false }
+                : m
+            )
+          );
+        })
+        .catch(err => {
+          console.warn('AI recommendation background fetch error:', err);
+          setMessages(prev =>
+            prev.map(m => (m.id === msgId ? { ...m, recommendationLoading: false } : m))
+          );
+        });
+
     } catch (err) {
       console.error('Scenario processing error:', err);
       const fallbackParsed = interpretScenarioPrompt(query, stagedParams);
+      const msgId = `ast-${Date.now()}`;
       const assistantMsg: ScenarioChatMessage = {
-        id: `ast-${Date.now()}`,
+        id: msgId,
         sender: 'assistant',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         text: fallbackParsed.interpretationText,
         sourceChips: ['General Ledger Heuristics', 'Q3 Base Plan'],
         proposedAssumptions: fallbackParsed.assumptions,
         isInterpretation: true,
-        followUpSuggestions: fallbackParsed.followUps
+        userQuery: query,
+        recommendationLoading: true,
+        followUpSuggestions: [
+          'What does FINVORA recommend for this?',
+          ...fallbackParsed.followUps
+        ]
       };
       setMessages(prev => [...prev, assistantMsg]);
+
+      fetchScenarioRecommendation(query, fallbackParsed.assumptions, simulationResult)
+        .then(rec => {
+          setMessages(prev =>
+            prev.map(m =>
+              m.id === msgId
+                ? { ...m, recommendation: rec, recommendationLoading: false }
+                : m
+            )
+          );
+        })
+        .catch(() => {
+          setMessages(prev =>
+            prev.map(m => (m.id === msgId ? { ...m, recommendationLoading: false } : m))
+          );
+        });
     } finally {
       setIsInterpreting(false);
     }
@@ -380,6 +579,7 @@ export const WhatIfSimulatorPage: React.FC = () => {
       followUps.push('What if we invest ₹25 lakh in growth capex?');
       followUps.push('What if operating expenses rise by 10%?');
     }
+    followUps.unshift('What does FINVORA recommend for this?');
     followUps.push('Compare with baseline');
 
     const resultMsg: ScenarioChatMessage = {
@@ -393,6 +593,7 @@ export const WhatIfSimulatorPage: React.FC = () => {
         lowestCash: freshResult.lowestCash,
         isReserveBreached: freshResult.isReserveBreached
       },
+      userQuery: stagedParams.name || 'this scenario',
       followUpSuggestions: followUps
     };
 
@@ -446,6 +647,55 @@ export const WhatIfSimulatorPage: React.FC = () => {
     setIsProposalModalOpen(false);
     navigate('/decisions-approvals');
     showToast('Contingency proposal created in Decisions & Approvals', 'success');
+  };
+
+  // Fetch AI Recommendation for a specific message and query
+  const handleFetchRecommendation = async (messageId: string, queryToUse: string) => {
+    setMessages(prev =>
+      prev.map(m => (m.id === messageId ? { ...m, recommendationLoading: true } : m))
+    );
+    try {
+      const rec = await fetchScenarioRecommendation(queryToUse, stagedParams, simulationResult);
+      setMessages(prev =>
+        prev.map(m =>
+          m.id === messageId
+            ? { ...m, recommendation: rec, recommendationLoading: false }
+            : m
+        )
+      );
+    } catch (err) {
+      console.error('Failed to fetch recommendation:', err);
+      setMessages(prev =>
+        prev.map(m => (m.id === messageId ? { ...m, recommendationLoading: false } : m))
+      );
+      showToast('Failed to fetch AI recommendation', 'error');
+    }
+  };
+
+  // Create Proposal from FINVORA Strategic Recommendation
+  const handleCreateRecommendationProposal = (rec: FinvoraRecommendation) => {
+    createProposal({
+      title: rec.proposal_recommendation || rec.title,
+      type: 'capex_freeze',
+      severity: (rec.risk_level || '').toLowerCase() === 'high' ? 'critical' : 'warning',
+      amount: Math.abs(simulationResult.deltaCash) || 450000,
+      description: rec.executive_summary,
+      evidence: rec.action_steps && rec.action_steps.length > 0 ? rec.action_steps : [
+        `Feasibility score: ${rec.feasibility_score}%`,
+        `Modeled financial impact: ${rec.financial_impact}`
+      ],
+      expectedImpact: rec.financial_impact,
+      assumptions: [
+        'Strategic phased milestones as determined by FINVORA intelligence engine.',
+        'Active working capital reserve lock.'
+      ],
+      confidence: rec.feasibility_score || 88.5,
+      requestedBy: role === 'manager' ? 'Rajesh Gopinathan (Finance Manager)' : 'Pooja Sharma (Analyst)',
+      assignedReviewer: 'Rajesh Gopinathan (Finance Manager / CFO)'
+    });
+
+    navigate('/decisions-approvals');
+    showToast('AI Recommendation proposal created in Decisions & Approvals', 'success');
   };
 
   return (
@@ -776,6 +1026,41 @@ export const WhatIfSimulatorPage: React.FC = () => {
                             {formatINRCompact(msg.resultSnapshot.deltaCash)}
                           </span>
                         </div>
+                      )}
+
+                      {/* What FINVORA Recommends AI Strategic Section */}
+                      {msg.sender === 'assistant' && (
+                        <>
+                          {msg.recommendation ? (
+                            <FinvoraRecommendationCard
+                              recommendation={msg.recommendation}
+                              onDraftProposal={handleCreateRecommendationProposal}
+                            />
+                          ) : msg.recommendationLoading ? (
+                            <div className="mt-3 p-2.5 rounded-xl border border-amber-500/30 bg-amber-500/5 flex items-center gap-2 text-xs text-amber-600 dark:text-amber-400">
+                              <Sparkles className="w-3.5 h-3.5 animate-spin shrink-0 text-amber-500" />
+                              <span className="text-[11px] leading-tight">
+                                FINVORA AI is synthesizing strategic recommendation from live telemetry...
+                              </span>
+                            </div>
+                          ) : (
+                            <div className="mt-2.5 pt-2 border-t border-[var(--divider)]">
+                              <button
+                                onClick={() => handleFetchRecommendation(msg.id, msg.userQuery || msg.text)}
+                                className="w-full py-1.5 px-3 rounded-lg text-xs font-semibold bg-gradient-to-r from-amber-500/10 via-[var(--surface-subtle)] to-amber-500/10 hover:from-amber-500/20 hover:to-amber-500/20 border border-amber-500/30 text-[var(--text-primary)] transition-all flex items-center justify-between group shadow-xs cursor-pointer"
+                              >
+                                <div className="flex items-center gap-1.5">
+                                  <Sparkles className="w-3.5 h-3.5 text-amber-500 group-hover:scale-110 transition-transform" />
+                                  <span className="font-bold text-[11px]">What FINVORA Recommends</span>
+                                </div>
+                                <div className="flex items-center gap-1 text-[10px] text-amber-600 dark:text-amber-400 font-medium">
+                                  <span>View AI directive</span>
+                                  <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+                                </div>
+                              </button>
+                            </div>
+                          )}
+                        </>
                       )}
                     </div>
 

@@ -205,6 +205,17 @@ export interface SavedScenario {
   revision?: number;
 }
 
+export interface FinvoraRecommendation {
+  title: string;
+  executive_summary: string;
+  feasibility_score: number;
+  financial_impact: string;
+  risk_level: 'Low' | 'Moderate' | 'High' | string;
+  action_steps: string[];
+  proposal_recommendation: string;
+  audit_confidence?: string;
+}
+
 export interface ScenarioChatMessage {
   id: string;
   sender: 'user' | 'assistant';
@@ -222,6 +233,9 @@ export interface ScenarioChatMessage {
   };
   followUpSuggestions?: string[];
   isUnsupported?: boolean;
+  recommendation?: FinvoraRecommendation;
+  recommendationLoading?: boolean;
+  userQuery?: string;
 }
 
 export interface DecisionProposal {
