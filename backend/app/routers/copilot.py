@@ -146,7 +146,7 @@ User Query: "{user_message}"
 Respond strictly with a valid JSON object (no markdown outside the JSON, no extra text) matching this schema:
 {{
   "reply": "Executive, structured answer formatted in clean Markdown with ### header, bullet points, and bold text. Keep it concise without rambling. ALWAYS format currencies in INR (₹). Never use $.",
-  "accuracy": 97.5,
+  "accuracy": 78.0,
   "feasibility": 94.0,
   "impact": "₹6.80L Protected",
   "feasibilityNote": "One concise sentence explaining feasibility and approval workflow.",
@@ -218,7 +218,7 @@ def generate_intelligent_financial_fallback(user_message: str, fin_context: Dict
         runway_months = round(fin_context.get("cash_balance", 20600000) / monthly_burn, 1)
         return {
             "reply": f"### Cash Runway & Liquidity Assessment\n• **Available Reserves**: **{cash_str}** across HDFC & ICICI operating accounts\n• **Net Monthly Burn**: Approximately **{_format_inr(monthly_burn)}/month**\n• **Effective Runway**: **{runway_months} Months** under current operating velocity\n• **Liquidity Status**: Stable, maintaining 2.4x the target reserve buffer of ₹80L.",
-            "accuracy": 98.4,
+            "accuracy": 78.0,
             "feasibility": 96.0,
             "impact": f"{runway_months} Mo Runway",
             "feasibilityNote": "Conservative baseline excluding uncollected enterprise receivables",
@@ -230,7 +230,7 @@ def generate_intelligent_financial_fallback(user_message: str, fin_context: Dict
     if any(k in lower for k in ["vendor", "zenith", "hyperscale", "shardul", "supplier", "payee"]):
         return {
             "reply": "### Vendor Risk & Spend Intelligence\n• **Zenith Cloud**: ₹6,80,000 flagged (#INV-2024-8849) — potential duplicate of settled invoice\n• **HyperScale Systems**: ₹38,50,000 server purchase order (9.1x historical spike)\n• **Shardul Amarchand**: ₹7,50,000 legal retainer — 4 days overdue\n\n**Action**: Immediate hold recommended on Zenith Cloud pending vendor credit confirmation.",
-            "accuracy": 99.1,
+            "accuracy": 78.0,
             "feasibility": 98.0,
             "impact": "₹45.3L Under Review",
             "feasibilityNote": "Vendor hold does not breach SLA terms or credit covenants",
@@ -242,7 +242,7 @@ def generate_intelligent_financial_fallback(user_message: str, fin_context: Dict
     if any(k in lower for k in ["invoice", "duplicate", "hold", "payable", "unpaid", "ap"]):
         return {
             "reply": "### Accounts Payable & Flagged Invoices\n• **#INV-2024-8849** (Zenith Cloud): **₹6,80,000** duplicate invoice pending release\n• **#INV-2024-8902** (HyperScale Systems): **₹38,50,000** outlier invoice requiring two-tier signoff\n• **#INV-2024-8660** (Legal): **₹7,50,000** pending release\n\n**Recommendation**: Applying an automated payment hold prevents ₹6.80L accidental duplicate disbursement.",
-            "accuracy": 99.4,
+            "accuracy": 78.0,
             "feasibility": 97.5,
             "impact": "₹6.80L Protected",
             "feasibilityNote": "Deterministic match against cleared transaction #TRX-8841",
@@ -254,7 +254,7 @@ def generate_intelligent_financial_fallback(user_message: str, fin_context: Dict
     if any(k in lower for k in ["budget", "department", "marketing", "overrun", "engineering", "spend", "variance"]):
         return {
             "reply": "### Department Budget Variance Report\n• **Marketing & Growth**: ₹48.60L spent vs ₹45.00L budget (**+18.0% overrun**)\n• **Engineering**: ₹62.00L spent vs ₹72.00L budget (**₹10.0L surplus**)\n• **Sales & RevOps**: On-track at 88% budget utilization\n\n**Proposed Remediation**: Auto-rebalance ₹4.50L from Engineering's Q3 cloud optimization surplus to absorb Marketing's overrun.",
-            "accuracy": 96.5,
+            "accuracy": 78.0,
             "feasibility": 94.0,
             "impact": "₹4.50L Rebalanced",
             "feasibilityNote": "Reallocation within approved departmental variance threshold",
@@ -266,7 +266,7 @@ def generate_intelligent_financial_fallback(user_message: str, fin_context: Dict
     if any(k in lower for k in ["risk", "anomaly", "fraud", "alert", "threat", "warning"]):
         return {
             "reply": f"### Autonomous Risk Matrix\n• **Open Risk Alerts**: {fin_context['open_risk_count']} active anomalies detected across General Ledger\n• **Top Critical Anomaly**: Duplicate vendor invoice #INV-2024-8849 (₹6.80L)\n• **Top Warning Anomaly**: 9.1x historical spike in hardware procurement (₹38.5L)\n• **Compliance**: 100% GL transactions monitored continuously by FINVORA ML heuristics.",
-            "accuracy": 98.8,
+            "accuracy": 78.0,
             "feasibility": 96.5,
             "impact": "₹45.3L Exposure",
             "feasibilityNote": "Policy rules triggered: DUP_HASH_01, SPIKE_SIGMA_03",
@@ -278,7 +278,7 @@ def generate_intelligent_financial_fallback(user_message: str, fin_context: Dict
     if any(k in lower for k in ["cash flow", "inflow", "outflow", "forecast", "projection", "balance"]):
         return {
             "reply": f"### Cash Flow & Forecast Telemetry\n• **Current Bank Balance**: **{cash_str}** across HDFC & ICICI accounts\n• **30-Day Inflow**: **{inflow_str}** from enterprise contracts and SaaS subscriptions\n• **30-Day Outflow**: **{outflow_str}** in operational expenses and vendor disbursements\n• **Projection**: Net cash flow remains resilient, with a projected minimum floor of ₹1.64 Cr over the next 60 days.",
-            "accuracy": 97.2,
+            "accuracy": 78.0,
             "feasibility": 95.0,
             "impact": "Reserves Secured",
             "feasibilityNote": "Forecast modeled via Prophet & ARIMA ensemble",
@@ -290,7 +290,7 @@ def generate_intelligent_financial_fallback(user_message: str, fin_context: Dict
     if any(k in lower for k in ["hire", "hiring", "salary", "headcount", "engineer", "afford", "expansion", "team"]):
         return {
             "reply": f"### Headcount & Expansion Feasibility\n• **Liquidity Capacity**: Current cash position of **{cash_str}** supports ongoing payroll obligations\n• **Runway Buffer**: Additional headcount of 3 senior engineers (~₹6.5L/mo burn) reduces runway by only 0.4 months\n• **Recommendation**: Feasible within Q4 hiring plan, provided Engineering surplus of ₹10L is not fully reallocated.",
-            "accuracy": 95.0,
+            "accuracy": 78.0,
             "feasibility": 91.5,
             "impact": "₹6.5L/mo Net Burn",
             "feasibilityNote": "Subject to CFO sign-off on annualized OPEX commitments",
@@ -302,7 +302,7 @@ def generate_intelligent_financial_fallback(user_message: str, fin_context: Dict
     if any(k in lower for k in ["tax", "gst", "tds", "compliance", "audit", "filing"]):
         return {
             "reply": "### Tax, GST & Audit Compliance Status\n• **GSTR-2B Reconciliation**: All input tax credits verified across 142 vendor invoices\n• **TDS Deductions**: 194C and 194J withholdings automatically applied on AP runs\n• **Audit Trail**: Every ledger modification and payment hold is cryptographically timestamped for statutory review.",
-            "accuracy": 98.9,
+            "accuracy": 78.0,
             "feasibility": 97.0,
             "impact": "100% Tax Compliant",
             "feasibilityNote": "Aligned with Indian GST & Direct Tax statutory timelines",
@@ -313,7 +313,7 @@ def generate_intelligent_financial_fallback(user_message: str, fin_context: Dict
     # 9. Dynamic General Query Response
     return {
         "reply": f"### Enterprise Financial Intelligence\nBased on your live ledger data (**{cash_str}** available cash, {fin_context['open_risk_count']} active alerts):\n• **Payment Holds**: ₹6.80L duplicate invoice (#INV-2024-8849) awaiting confirmation\n• **Budget Monitoring**: Marketing is currently +18% over budget; Engineering has ₹10.0L surplus\n• **Liquidity Outlook**: Operating runway remains healthy at 14+ months\n\n*You can ask me specific questions about vendor invoices, runway, department budgets, tax compliance, or scenario stress testing.*",
-        "accuracy": 97.0,
+        "accuracy": 78.0,
         "feasibility": 95.0,
         "impact": "Live GL Grounded",
         "feasibilityNote": "Synchronized with current enterprise General Ledger",
@@ -336,7 +336,7 @@ def copilot_chat(payload: CopilotChatRequest, db: Session = Depends(get_db)):
     if not msg:
         return CopilotChatResponse(
             reply="Please provide a financial query.",
-            kpis=CopilotKPIs(accuracy=100.0, feasibility=100.0, impact="Ready", feasibilityNote="Awaiting user query")
+            kpis=CopilotKPIs(accuracy=78.0, feasibility=100.0, impact="Ready", feasibilityNote="Awaiting user query")
         )
 
     # 1. Fetch live financial telemetry
@@ -349,7 +349,7 @@ def copilot_chat(payload: CopilotChatRequest, db: Session = Depends(get_db)):
         citations = [Citation(**c) for c in llm_result.get("citations", []) if isinstance(c, dict)]
         actions = [SuggestedAction(**a) for a in llm_result.get("suggestedActions", []) if isinstance(a, dict)]
         kpi_dict = {
-            "accuracy": float(llm_result.get("accuracy", 97.5)),
+            "accuracy": float(llm_result.get("accuracy", 78.0)),
             "feasibility": float(llm_result.get("feasibility", 95.0)),
             "impact": str(llm_result.get("impact", "Ledger Verified")),
             "feasibilityNote": str(llm_result.get("feasibilityNote", "Verified against enterprise ledger")),

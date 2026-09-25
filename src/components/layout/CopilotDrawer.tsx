@@ -211,7 +211,7 @@ export const CopilotDrawer: React.FC = () => {
       <div className="px-4 py-2 bg-[var(--surface-subtle)] border-b border-[var(--divider)] flex items-center justify-between text-[11px]">
         <div className="flex items-center gap-1.5" title="Model confidence evaluated against live ERP ledger reconciliations">
           <span className="text-[10px] uppercase font-bold tracking-wider text-[var(--text-muted)]">Accuracy</span>
-          <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">97.8%</span>
+          <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">78%</span>
         </div>
         <div className="h-3 w-px bg-[var(--divider)]" />
         <div className="flex items-center gap-1.5" title="Workflow feasibility based on company approval matrix and policy">

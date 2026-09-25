@@ -273,7 +273,7 @@ export const FinancialProvider: React.FC<{ children: ReactNode }> = ({ children 
       timestamp: 'Today',
       text: 'Good morning. Live ledger telemetry evaluated.\n\n• **Duplicate Invoice Flagged**: #INV-2024-8849 (₹6,80,000) pending payment hold\n• **Budget Variance**: Marketing & Growth is +18% over threshold\n\nHow can I assist your financial decisions today?',
       kpis: {
-        accuracy: 98.2,
+        accuracy: 78,
         feasibility: 96.0,
         impact: '₹6.80L Mitigated',
         feasibilityNote: 'Dual ERP match verified; ready for 1-click hold',
@@ -718,7 +718,7 @@ export const FinancialProvider: React.FC<{ children: ReactNode }> = ({ children 
     if (lower.includes('runway') || lower.includes('burn') || lower.includes('liquidity') || lower.includes('how long')) {
       replyText = `### Cash Runway & Liquidity Assessment\n• **Available Reserves**: **₹2.06 Cr** across HDFC & ICICI accounts\n• **Net Monthly Burn**: ~₹30.82 L/month\n• **Effective Runway**: **6.7 Months** under current operating velocity\n• **Liquidity Status**: Stable, maintaining 2.4x the target reserve buffer of ₹80L.`;
       kpis = {
-        accuracy: 98.4,
+        accuracy: 78,
         feasibility: 96.0,
         impact: '6.7 Mo Runway',
         feasibilityNote: 'Conservative baseline excluding uncollected enterprise receivables',
@@ -729,7 +729,7 @@ export const FinancialProvider: React.FC<{ children: ReactNode }> = ({ children 
     } else if (lower.includes('vendor') || lower.includes('zenith') || lower.includes('hyperscale') || lower.includes('shardul') || lower.includes('supplier')) {
       replyText = `### Vendor Risk & Spend Intelligence\n• **Zenith Cloud**: ₹6,80,000 flagged (#INV-2024-8849) — potential duplicate of settled invoice\n• **HyperScale Systems**: ₹38,50,000 server PO (9.1x historical spike)\n• **Shardul Amarchand**: ₹7,50,000 legal retainer — 4 days overdue\n\n**Action**: Immediate hold recommended on Zenith Cloud pending vendor credit confirmation.`;
       kpis = {
-        accuracy: 99.1,
+        accuracy: 78,
         feasibility: 98.0,
         impact: '₹45.3L Under Review',
         feasibilityNote: 'Vendor hold does not breach SLA terms or credit covenants',
@@ -740,7 +740,7 @@ export const FinancialProvider: React.FC<{ children: ReactNode }> = ({ children 
     } else if (lower.includes('hire') || lower.includes('hiring') || lower.includes('salary') || lower.includes('headcount') || lower.includes('engineer') || lower.includes('team') || lower.includes('afford')) {
       replyText = `### Headcount & Expansion Feasibility\n• **Liquidity Capacity**: Current cash position of **₹2.06 Cr** supports ongoing payroll obligations\n• **Runway Buffer**: Additional headcount of 3 senior engineers (~₹6.5L/mo burn) reduces runway by only 0.4 months\n• **Recommendation**: Feasible within Q4 hiring plan, provided Engineering surplus of ₹10L is not fully reallocated.`;
       kpis = {
-        accuracy: 95.0,
+        accuracy: 78,
         feasibility: 91.5,
         impact: '₹6.5L/mo Net Burn',
         feasibilityNote: 'Subject to CFO sign-off on annualized OPEX commitments',
@@ -751,7 +751,7 @@ export const FinancialProvider: React.FC<{ children: ReactNode }> = ({ children 
     } else if (lower.includes('risk') || lower.includes('anomaly') || lower.includes('fraud') || lower.includes('alert')) {
       replyText = `### Autonomous Risk Matrix\n• **Open Risk Alerts**: 16 active anomalies detected across General Ledger\n• **Top Critical Anomaly**: Duplicate vendor invoice #INV-2024-8849 (₹6.80L)\n• **Top Warning Anomaly**: 9.1x historical spike in hardware procurement (₹38.5L)\n• **Compliance**: 100% GL transactions monitored continuously by FINVORA ML heuristics.`;
       kpis = {
-        accuracy: 98.8,
+        accuracy: 78,
         feasibility: 96.5,
         impact: '₹45.3L Exposure',
         feasibilityNote: 'Policy rules triggered: DUP_HASH_01, SPIKE_SIGMA_03',
@@ -762,7 +762,7 @@ export const FinancialProvider: React.FC<{ children: ReactNode }> = ({ children 
     } else if (lower.includes('tax') || lower.includes('gst') || lower.includes('tds') || lower.includes('compliance') || lower.includes('audit')) {
       replyText = `### Tax, GST & Audit Compliance Status\n• **GSTR-2B Reconciliation**: All input tax credits verified across 142 vendor invoices\n• **TDS Deductions**: 194C and 194J withholdings automatically applied on AP runs\n• **Audit Trail**: Every ledger modification and payment hold is cryptographically timestamped for statutory review.`;
       kpis = {
-        accuracy: 98.9,
+        accuracy: 78,
         feasibility: 97.0,
         impact: '100% Tax Compliant',
         feasibilityNote: 'Aligned with Indian GST & Direct Tax statutory timelines',
@@ -773,7 +773,7 @@ export const FinancialProvider: React.FC<{ children: ReactNode }> = ({ children 
     } else if (lower.includes('cash') || lower.includes('balance') || lower.includes('fall') || lower.includes('decline') || lower.includes('shortfall')) {
       replyText = `### Cash Balance Drivers\nProjected liquidity dips near Day 48 due to:\n• **AP Outflows**: ₹38.5L Server PO + ₹18.5L Marketing ad spend\n• **Duplicate Invoice**: ₹6.80L candidate (#INV-2024-8849)\n• **Aged Receivables**: ₹75.0L enterprise AR aged 30+ days\n\n**Recommendation**: Holding duplicate #INV-2024-8849 preserves ₹6.80L and maintains reserves above ₹25L.`;
       kpis = {
-        accuracy: 96.8,
+        accuracy: 78,
         feasibility: 94.2,
         impact: '₹6.80L Protected',
         feasibilityNote: '1-click CFO approval hold on duplicate vendor release',
@@ -790,7 +790,7 @@ export const FinancialProvider: React.FC<{ children: ReactNode }> = ({ children 
     } else if (lower.includes('invoice') || lower.includes('review') || lower.includes('duplicate') || lower.includes('hold') || lower.includes('payable') || lower.includes('ap')) {
       replyText = `### Invoices Requiring Review\n• **#INV-2024-8849** (Zenith Cloud): **₹6,80,000** — Critical duplicate candidate of settled #INV-8841.\n• **#INV-2024-8902** (HyperScale Systems): **₹38,50,000** — 9.1x historical spike; needs dual approval.\n• **#INV-2024-8660** (Shardul Amarchand): **₹7,50,000** — Overdue by 4 days.`;
       kpis = {
-        accuracy: 99.2,
+        accuracy: 78,
         feasibility: 98.0,
         impact: '₹45.3L Under Review',
         feasibilityNote: 'Deterministic SAP ledger cross-match; immediate hold feasible',
@@ -807,7 +807,7 @@ export const FinancialProvider: React.FC<{ children: ReactNode }> = ({ children 
     } else if (lower.includes('marketing') || lower.includes('budget') || lower.includes('over budget') || lower.includes('variance') || lower.includes('department') || lower.includes('spend')) {
       replyText = `### Marketing Budget Variance\n• **Status**: ₹48.60L spent vs ₹45.00L allocated (**+18.0% variance**)\n• **Cause**: Unplanned festive paid acquisition push on Meta & Google Ads\n• **Remedy**: Auto-reallocation of ₹4.50L from Engineering's ₹10.0L surplus is drafted.`;
       kpis = {
-        accuracy: 95.8,
+        accuracy: 78,
         feasibility: 92.0,
         impact: '₹4.50L Rebalanced',
         feasibilityNote: 'Engineering cost-center surplus verified in ledger',
@@ -824,7 +824,7 @@ export const FinancialProvider: React.FC<{ children: ReactNode }> = ({ children 
     } else if (lower.includes('15 days') || lower.includes('delay') || lower.includes('late')) {
       replyText = `### 15-Day Delay Stress Test\n• **Cash Impact**: -₹22.4L during Days 20–35\n• **Minimum Reserve**: ₹1.18 Cr (runway buffer drops to 6.2 days)\n• **Assessment**: No insolvency; hold non-critical vendor disbursements to maintain cushion.`;
       kpis = {
-        accuracy: 94.5,
+        accuracy: 78,
         feasibility: 89.0,
         impact: '-₹22.4L Liquidity Swing',
         feasibilityNote: 'Working capital adjustment via AP rescheduling is viable',
@@ -836,7 +836,7 @@ export const FinancialProvider: React.FC<{ children: ReactNode }> = ({ children 
     } else {
       replyText = `### Enterprise Financial Intelligence\nBased on your live ledger data (**₹2.06 Cr** cash reserves, 16 active alerts):\n• **Payment Holds**: ₹6.80L duplicate invoice (#INV-2024-8849) awaiting confirmation\n• **Budget Monitoring**: Marketing is currently +18% over budget; Engineering has ₹10.0L surplus\n• **Liquidity Outlook**: Operating runway remains healthy at 6.7+ months\n\n*You can ask me any question about invoices, runway, department budgets, tax compliance, or what-if stress tests.*`;
       kpis = {
-        accuracy: 97.4,
+        accuracy: 78,
         feasibility: 95.0,
         impact: 'Live GL Telemetry',
         feasibilityNote: 'Verified against current GL state',
