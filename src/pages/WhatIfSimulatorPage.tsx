@@ -60,6 +60,74 @@ const PROMPT_SUGGESTIONS = [
   'What if we invest ₹20 lakh in equipment?'
 ];
 
+// Utility component to render clean, readable messages without raw # or * characters
+const CleanFormattedMessage: React.FC<{ text: string }> = ({ text }) => {
+  const lines = text.split('\n');
+  return (
+    <div className="space-y-1.5 leading-relaxed text-xs">
+      {lines.map((line, idx) => {
+        // Strip any leading markdown hashes (#)
+        const cleanLine = line.replace(/^#{1,6}\s*/, '').trim();
+
+        if (!cleanLine) {
+          return <div key={idx} className="h-1" />;
+        }
+
+        // Bullet line handling
+        const isBullet = cleanLine.startsWith('•') || cleanLine.startsWith('-');
+        const content = isBullet ? cleanLine.replace(/^[•\-]\s*/, '') : cleanLine;
+
+        // Split by bold (**...**) or clean any remaining asterisks
+        const parts = content.split(/(\*\*.*?\*\*|\*.*?\*)/g);
+
+        const renderedLine = parts.map((part, pIdx) => {
+          if ((part.startsWith('**') && part.endsWith('**')) || (part.startsWith('*') && part.endsWith('*'))) {
+            const inner = part.replace(/^\*+|\*+$/g, '').replace(/[#*]/g, '');
+            return (
+              <strong key={pIdx} className="font-semibold text-[var(--text-primary)]">
+                {inner}
+              </strong>
+            );
+          }
+          return part.replace(/[*#]/g, '');
+        });
+
+        // Header detection (e.g., "Simulation Executed" or "Key Financial Drivers")
+        const isHeader = !isBullet && (
+          line.trim().startsWith('#') || 
+          cleanLine.endsWith(':') || 
+          cleanLine.toLowerCase().includes('simulation executed') ||
+          cleanLine.toLowerCase().includes('key financial drivers') ||
+          cleanLine.toLowerCase().includes('scenario stress-test')
+        );
+
+        if (isHeader) {
+          return (
+            <div key={idx} className="font-bold text-[var(--text-primary)] text-xs pt-1 pb-0.5 border-b border-[var(--divider)] mb-1">
+              {renderedLine}
+            </div>
+          );
+        }
+
+        if (isBullet) {
+          return (
+            <div key={idx} className="flex items-start gap-1.5 pl-0.5">
+              <span className="text-amber-500 font-bold shrink-0">•</span>
+              <span>{renderedLine}</span>
+            </div>
+          );
+        }
+
+        return (
+          <p key={idx} className="text-[var(--text-primary)]">
+            {renderedLine}
+          </p>
+        );
+      })}
+    </div>
+  );
+};
+
 export const WhatIfSimulatorPage: React.FC = () => {
   const navigate = useNavigate();
   const {
@@ -274,30 +342,30 @@ export const WhatIfSimulatorPage: React.FC = () => {
       ? leverDescriptions.join(', ') 
       : activeParams.name || 'Custom Scenario';
 
-    let summaryText = `### Simulation Executed: ${scenarioTitle}\n\n`;
+    let summaryText = `Simulation Executed: ${scenarioTitle}\n\n`;
 
     if (isDeficit) {
-      summaryText += `• **Liquidity Impact**: Projected ending cash contracts by **${formatINR(Math.abs(freshResult.deltaCash))}** versus baseline (ending at **${formatINR(freshResult.endingCash)}** over ${horizon} days).\n`;
+      summaryText += `• Liquidity Impact: Projected ending cash contracts by ${formatINR(Math.abs(freshResult.deltaCash))} versus baseline (ending at ${formatINR(freshResult.endingCash)} over ${horizon} days).\n`;
     } else if (isSurplus) {
-      summaryText += `• **Liquidity Expansion**: Projected ending cash expands by **${formatINR(freshResult.deltaCash)}** above baseline (reaching **${formatINR(freshResult.endingCash)}** over ${horizon} days).\n`;
+      summaryText += `• Liquidity Expansion: Projected ending cash expands by ${formatINR(freshResult.deltaCash)} above baseline (reaching ${formatINR(freshResult.endingCash)} over ${horizon} days).\n`;
     } else {
-      summaryText += `• **Neutral Trajectory**: Cash flow matches baseline plan at **${formatINR(freshResult.endingCash)}** over ${horizon} days.\n`;
+      summaryText += `• Neutral Trajectory: Cash flow matches baseline plan at ${formatINR(freshResult.endingCash)} over ${horizon} days.\n`;
     }
 
     // Trough & reserve evaluation
     if (freshResult.isNegativeCashBreached) {
-      summaryText += `• **CRITICAL DEFICIT**: Cash balance enters negative territory, bottoming at **${formatINR(freshResult.lowestCash)}** on ${freshResult.shortfallDate ? formatDate(freshResult.shortfallDate) : 'mid-horizon'}. Emergency credit facility or payment holds required.\n`;
+      summaryText += `• CRITICAL DEFICIT: Cash balance enters negative territory, bottoming at ${formatINR(freshResult.lowestCash)} on ${freshResult.shortfallDate ? formatDate(freshResult.shortfallDate) : 'mid-horizon'}. Emergency credit facility or payment holds required.\n`;
     } else if (freshResult.isReserveBreached) {
-      summaryText += `• **RESERVE BREACH**: Liquidity dips below the ₹20.0 L safe reserve around **${freshResult.shortfallDate ? formatDate(freshResult.shortfallDate) : 'Day 25'}**, reaching a minimum trough of **${formatINR(freshResult.lowestCash)}**.\n`;
+      summaryText += `• RESERVE BREACH: Liquidity dips below the ₹20.0 L safe reserve around ${freshResult.shortfallDate ? formatDate(freshResult.shortfallDate) : 'Day 25'}, reaching a minimum trough of ${formatINR(freshResult.lowestCash)}.\n`;
     } else {
-      summaryText += `• **SAFE RESERVE SECURED**: Liquidity maintains a healthy cushion above the ₹20.0 L buffer throughout all ${horizon} days, bottoming at **${formatINR(freshResult.lowestCash)}**.\n`;
+      summaryText += `• SAFE RESERVE SECURED: Liquidity maintains a healthy cushion above the ₹20.0 L buffer throughout all ${horizon} days, bottoming at ${formatINR(freshResult.lowestCash)}.\n`;
     }
 
     // Key drivers from calculation engine
     if (freshResult.keyDrivers && freshResult.keyDrivers.length > 0) {
-      summaryText += `\n**Key Financial Drivers:**\n`;
+      summaryText += `\nKey Financial Drivers:\n`;
       freshResult.keyDrivers.forEach(kd => {
-        summaryText += `• **${kd.label}**: ${kd.description} (${kd.impact >= 0 ? '+' : ''}${formatINRCompact(kd.impact)})\n`;
+        summaryText += `• ${kd.label}: ${kd.description} (${kd.impact >= 0 ? '+' : ''}${formatINRCompact(kd.impact)})\n`;
       });
     }
 
@@ -608,7 +676,11 @@ export const WhatIfSimulatorPage: React.FC = () => {
                           : 'bg-[var(--card-bg-elevated)] text-[var(--text-primary)] border border-[var(--divider)] rounded-tl-xs shadow-xs'
                       }`}
                     >
-                      <p className="whitespace-pre-wrap">{msg.text}</p>
+                      {msg.sender === 'user' ? (
+                        <p className="whitespace-pre-wrap">{msg.text.replace(/[*#]/g, '')}</p>
+                      ) : (
+                        <CleanFormattedMessage text={msg.text} />
+                      )}
 
                       {/* Source Chips */}
                       {msg.sourceChips && msg.sourceChips.length > 0 && (

@@ -368,6 +368,19 @@ def generate_intelligent_financial_fallback(user_message: str, fin_context: Dict
     }
 
 
+def _clean_markdown_symbols(text: str) -> str:
+    """Strip all raw # and * characters from replies."""
+    if not text:
+        return ""
+    # Strip heading hashtags at line beginnings
+    cleaned = re.sub(r"^#{1,6}\s*", "", text, flags=re.MULTILINE)
+    # Strip bold/italic markdown asterisks
+    cleaned = re.sub(r"\*{1,3}([^*]+)\*{1,3}", r"\1", cleaned)
+    # Strip any stray asterisks or hashes
+    cleaned = re.sub(r"[\*#]", "", cleaned)
+    return cleaned.strip()
+
+
 @router.post("/chat", response_model=CopilotChatResponse)
 def copilot_chat(payload: CopilotChatRequest, db: Session = Depends(get_db)):
     """
@@ -399,7 +412,7 @@ def copilot_chat(payload: CopilotChatRequest, db: Session = Depends(get_db)):
             "auditConfidence": "Verified"
         }
         return CopilotChatResponse(
-            reply=llm_result["reply"],
+            reply=_clean_markdown_symbols(llm_result["reply"]),
             kpis=CopilotKPIs(**kpi_dict),
             citations=citations,
             suggestedActions=actions
@@ -418,7 +431,7 @@ def copilot_chat(payload: CopilotChatRequest, db: Session = Depends(get_db)):
     )
 
     return CopilotChatResponse(
-        reply=fallback_result["reply"],
+        reply=_clean_markdown_symbols(fallback_result["reply"]),
         kpis=kpis,
         citations=citations,
         suggestedActions=actions
