@@ -1,0 +1,3 @@
+# Pickled ML models are stored here after running scripts/train_models.py
+# This directory is intentionally kept in version control (for .gitkeep)
+# but the .pkl files themselves should be in .gitignore

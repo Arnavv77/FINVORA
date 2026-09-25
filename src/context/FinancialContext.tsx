@@ -1,0 +1,842 @@
+import React, { createContext, useContext, useState, useEffect, useMemo, ReactNode } from 'react';
+import {
+  UserRole,
+  SourceConnection,
+  Transaction,
+  AnomalyRecord,
+  Invoice,
+  DepartmentBudget,
+  PaymentScheduleItem,
+  DecisionProposal,
+  WorkflowRule,
+  SimulationParams,
+  SimulationResult,
+  SavedScenario,
+  CopilotMessage,
+  CashForecastPoint,
+  DataQualityIssue
+} from '../types';
+import {
+  INITIAL_DATA_SOURCES,
+  INITIAL_DATA_QUALITY_ISSUES,
+  INITIAL_TRANSACTIONS,
+  INITIAL_ANOMALIES,
+  INITIAL_INVOICES,
+  INITIAL_DEPARTMENT_BUDGETS,
+  INITIAL_DECISION_PROPOSALS,
+  INITIAL_WORKFLOW_RULES,
+  INITIAL_PAYMENT_SCHEDULE,
+  generateCashForecastPoints
+} from '../data/mockData';
+import { formatINR } from '../utils/formatters';
+import { calculateScenario, DEFAULT_SIMULATION_PARAMS } from '../utils/scenarioEngine';
+import {
+  fetchDashboardSummary,
+  fetchRiskAlerts,
+  fetchDepartmentBudgets,
+  fetchCashForecast,
+  takeRiskAction
+} from '../lib/api';
+
+interface Toast {
+  id: string;
+  type: 'success' | 'warning' | 'info' | 'error';
+  message: string;
+  timestamp: number;
+}
+
+interface FinancialContextType {
+  // Role & Workspace
+  role: UserRole;
+  setRole: (role: UserRole) => void;
+  workspaceName: string;
+  dateRange: string;
+  setDateRange: (range: string) => void;
+
+  // Theme Architecture
+  themeMode: 'light' | 'dark' | 'system';
+  actualTheme: 'light' | 'dark';
+  setThemeMode: (mode: 'light' | 'dark' | 'system') => void;
+  toggleTheme: () => void;
+
+  // Data
+  sources: SourceConnection[];
+  qualityIssues: DataQualityIssue[];
+  transactions: Transaction[];
+  anomalies: AnomalyRecord[];
+  invoices: Invoice[];
+  budgets: DepartmentBudget[];
+  paymentSchedule: PaymentScheduleItem[];
+  proposals: DecisionProposal[];
+  workflowRules: WorkflowRule[];
+
+  // Cash Forecast & Computed
+  forecastData: CashForecastPoint[];
+  availableCash: number;
+  netCashFlow30d: number;
+  outstandingPayables: number;
+  openCriticalRisksCount: number;
+  isBackendConnected?: boolean;
+
+  // Actions
+  refreshSource: (id: string) => void;
+  addTransaction: (txn: Omit<Transaction, 'id'>) => void;
+  importTransactions: (txns: Transaction[]) => void;
+  updateAnomalyStatus: (id: string, status: AnomalyRecord['status'], note?: string, dismissReason?: string) => void;
+  assignAnomaly: (id: string, assignee: string) => void;
+  placeInvoiceHold: (invoiceId: string) => void;
+  reallocateBudget: (fromDeptId: string, toDeptId: string, amount: number, reason: string) => void;
+  
+  // Proposals & Approval Workflow
+  createProposal: (proposal: Omit<DecisionProposal, 'id' | 'createdAt' | 'updatedAt' | 'status'>) => DecisionProposal;
+  submitProposalForApproval: (id: string) => void;
+  approveProposal: (id: string) => void;
+  rejectProposal: (id: string, reason: string) => void;
+  executeProposal: (id: string) => void;
+
+  // Workflow Rules
+  toggleRule: (id: string) => void;
+  addWorkflowRule: (rule: Omit<WorkflowRule, 'id' | 'triggerCount'>) => void;
+
+  // What-If Simulation
+  simulationParams: SimulationParams;
+  setSimulationParams: React.Dispatch<React.SetStateAction<SimulationParams>>;
+  simulationResult: SimulationResult;
+  savedScenarios: SavedScenario[];
+  saveScenario: (name: string, notes?: string) => void;
+  loadScenario: (scenario: SavedScenario) => void;
+  deleteScenario: (id: string) => void;
+  resetSimulation: () => void;
+
+  // Copilot
+  copilotOpen: boolean;
+  setCopilotOpen: (open: boolean) => void;
+  copilotMessages: CopilotMessage[];
+  sendCopilotMessage: (text: string) => void;
+
+  // Toasts & Demo Reset
+  toasts: Toast[];
+  showToast: (message: string, type?: Toast['type']) => void;
+  resetDemoData: () => void;
+  duplicateHoldExecuted: boolean;
+}
+
+const FinancialContext = createContext<FinancialContextType | undefined>(undefined);
+
+const LOCAL_STORAGE_KEY = 'FINVORA_APP_STATE_V1';
+
+export const FinancialProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  // Load saved state or defaults
+  const [role, setRoleState] = useState<UserRole>(() => {
+    return (localStorage.getItem('FINVORA_USER_ROLE') as UserRole) || 'analyst';
+  });
+
+  // Theme state with localStorage & system preference sync
+  const [themeMode, setThemeModeState] = useState<'light' | 'dark' | 'system'>(() => {
+    return (localStorage.getItem('FINVORA_THEME_MODE') as 'light' | 'dark' | 'system') || 'system';
+  });
+
+  const [systemPrefersDark, setSystemPrefersDark] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const media = window.matchMedia('(prefers-color-scheme: dark)');
+    const handler = (e: MediaQueryListEvent) => setSystemPrefersDark(e.matches);
+    media.addEventListener('change', handler);
+    return () => media.removeEventListener('change', handler);
+  }, []);
+
+  const actualTheme: 'light' | 'dark' = useMemo(() => {
+    if (themeMode === 'system') {
+      return systemPrefersDark ? 'dark' : 'light';
+    }
+    return themeMode;
+  }, [themeMode, systemPrefersDark]);
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    if (actualTheme === 'dark') {
+      document.documentElement.classList.add('dark');
+      document.documentElement.classList.remove('light');
+    } else {
+      document.documentElement.classList.remove('dark');
+      document.documentElement.classList.add('light');
+    }
+  }, [actualTheme]);
+
+  const setThemeMode = (mode: 'light' | 'dark' | 'system') => {
+    setThemeModeState(mode);
+    localStorage.setItem('FINVORA_THEME_MODE', mode);
+  };
+
+  const toggleTheme = () => {
+    const next = actualTheme === 'dark' ? 'light' : 'dark';
+    setThemeMode(next);
+  };
+
+  const [dateRange, setDateRange] = useState<string>('Sep 2024 (Q3 FY25)');
+  const workspaceName = 'Aethelgard Enterprise India Pvt Ltd';
+
+  const [sources, setSources] = useState<SourceConnection[]>(() => {
+    const saved = localStorage.getItem(`${LOCAL_STORAGE_KEY}_sources`);
+    return saved ? JSON.parse(saved) : INITIAL_DATA_SOURCES;
+  });
+
+  const [qualityIssues] = useState<DataQualityIssue[]>(INITIAL_DATA_QUALITY_ISSUES);
+
+  const [transactions, setTransactions] = useState<Transaction[]>(() => {
+    const saved = localStorage.getItem(`${LOCAL_STORAGE_KEY}_txns`);
+    return saved ? JSON.parse(saved) : INITIAL_TRANSACTIONS;
+  });
+
+  const [anomalies, setAnomalies] = useState<AnomalyRecord[]>(() => {
+    const saved = localStorage.getItem(`${LOCAL_STORAGE_KEY}_anomalies`);
+    return saved ? JSON.parse(saved) : INITIAL_ANOMALIES;
+  });
+
+  const [invoices, setInvoices] = useState<Invoice[]>(() => {
+    const saved = localStorage.getItem(`${LOCAL_STORAGE_KEY}_invoices`);
+    return saved ? JSON.parse(saved) : INITIAL_INVOICES;
+  });
+
+  const [budgets, setBudgets] = useState<DepartmentBudget[]>(() => {
+    const saved = localStorage.getItem(`${LOCAL_STORAGE_KEY}_budgets`);
+    return saved ? JSON.parse(saved) : INITIAL_DEPARTMENT_BUDGETS;
+  });
+
+  const [paymentSchedule, setPaymentSchedule] = useState<PaymentScheduleItem[]>(() => {
+    const saved = localStorage.getItem(`${LOCAL_STORAGE_KEY}_schedule`);
+    return saved ? JSON.parse(saved) : INITIAL_PAYMENT_SCHEDULE;
+  });
+
+  const [proposals, setProposals] = useState<DecisionProposal[]>(() => {
+    const saved = localStorage.getItem(`${LOCAL_STORAGE_KEY}_proposals`);
+    return saved ? JSON.parse(saved) : INITIAL_DECISION_PROPOSALS;
+  });
+
+  const [workflowRules, setWorkflowRules] = useState<WorkflowRule[]>(() => {
+    const saved = localStorage.getItem(`${LOCAL_STORAGE_KEY}_rules`);
+    return saved ? JSON.parse(saved) : INITIAL_WORKFLOW_RULES;
+  });
+
+  const [duplicateHoldExecuted, setDuplicateHoldExecuted] = useState<boolean>(() => {
+    return localStorage.getItem(`${LOCAL_STORAGE_KEY}_duplicate_held`) === 'true';
+  });
+
+  // What-If Simulation State
+  const defaultSimulationParams: SimulationParams = DEFAULT_SIMULATION_PARAMS;
+
+  const [simulationParams, setSimulationParams] = useState<SimulationParams>(defaultSimulationParams);
+
+  const [savedScenarios, setSavedScenarios] = useState<SavedScenario[]>(() => {
+    const saved = localStorage.getItem(`${LOCAL_STORAGE_KEY}_scenarios`);
+    return saved ? JSON.parse(saved) : [
+      {
+        id: 'SCEN-01',
+        name: 'Festive Slowdown & 15-Day Delay',
+        createdAt: '2024-09-22',
+        params: {
+          name: 'Festive Slowdown & 15-Day Delay',
+          horizonDays: 60,
+          revenueChangePct: -10,
+          collectionDelayDays: 15,
+          expenseChangePct: 5,
+          paymentRescheduleDays: 0,
+          capexHiringCost: 1500000,
+          capexDay: 15,
+          affectedScope: 'All enterprise operations',
+          baselineReference: 'Q3 FY25 Reconciled Base Plan'
+        },
+        endingCash: 21850000,
+        lowestCash: 14200000,
+        deltaCash: -6550000,
+        notes: 'Simulates 10% lower customer renewals and 15 days delay in collections.'
+      }
+    ];
+  });
+
+  // Copilot State
+  const [copilotOpen, setCopilotOpen] = useState(false);
+  const [copilotMessages, setCopilotMessages] = useState<CopilotMessage[]>([
+    {
+      id: 'msg-init',
+      sender: 'finvora',
+      timestamp: '10:00 AM',
+      text: 'Good morning, Finance Team. I am **FINVORA**, your autonomous Finance Copilot & Predictive Engine.\n\nI have identified **1 critical duplicate invoice** (#INV-2024-8849 for ₹6,80,000) and **Marketing budget variance (+18%)**. How can I assist you with financial decisions today?',
+      citations: [
+        { type: 'risk', title: 'Duplicate Invoice ANOM-2024-001', referenceId: 'ANOM-2024-001' },
+        { type: 'invoice', title: 'Invoice #INV-2024-8849', referenceId: 'INV-2024-8849' },
+        { type: 'department', title: 'Marketing Budget Overrun', referenceId: 'dept-mktg' }
+      ],
+      suggestedActions: [
+        { label: 'Inspect Duplicate Invoice #8849', actionType: 'navigate', payload: '/risk-anomalies' },
+        { label: 'Why is cash balance declining?', actionType: 'filter', payload: 'cash_decline' },
+        { label: 'Simulate 15-day Collection Delay', actionType: 'navigate', payload: '/what-if' }
+      ]
+    }
+  ]);
+
+  // Toasts
+  const [toasts, setToasts] = useState<Toast[]>([]);
+
+  const showToast = (message: string, type: Toast['type'] = 'success') => {
+    const id = Math.random().toString(36).substring(2, 9);
+    setToasts(prev => [...prev, { id, type, message, timestamp: Date.now() }]);
+    setTimeout(() => {
+      setToasts(prev => prev.filter(t => t.id !== id));
+    }, 4500);
+  };
+
+  const setRole = (newRole: UserRole) => {
+    setRoleState(newRole);
+    localStorage.setItem('FINVORA_USER_ROLE', newRole);
+    showToast(`Switched active role to ${newRole === 'manager' ? 'Finance Manager (Approver)' : 'Finance Analyst'}`, 'info');
+  };
+
+  // Sync state to LocalStorage
+  useEffect(() => {
+    localStorage.setItem(`${LOCAL_STORAGE_KEY}_sources`, JSON.stringify(sources));
+    localStorage.setItem(`${LOCAL_STORAGE_KEY}_txns`, JSON.stringify(transactions));
+    localStorage.setItem(`${LOCAL_STORAGE_KEY}_anomalies`, JSON.stringify(anomalies));
+    localStorage.setItem(`${LOCAL_STORAGE_KEY}_invoices`, JSON.stringify(invoices));
+    localStorage.setItem(`${LOCAL_STORAGE_KEY}_budgets`, JSON.stringify(budgets));
+    localStorage.setItem(`${LOCAL_STORAGE_KEY}_schedule`, JSON.stringify(paymentSchedule));
+    localStorage.setItem(`${LOCAL_STORAGE_KEY}_proposals`, JSON.stringify(proposals));
+    localStorage.setItem(`${LOCAL_STORAGE_KEY}_rules`, JSON.stringify(workflowRules));
+    localStorage.setItem(`${LOCAL_STORAGE_KEY}_scenarios`, JSON.stringify(savedScenarios));
+    localStorage.setItem(`${LOCAL_STORAGE_KEY}_duplicate_held`, String(duplicateHoldExecuted));
+  }, [sources, transactions, anomalies, invoices, budgets, paymentSchedule, proposals, workflowRules, savedScenarios, duplicateHoldExecuted]);
+
+  // Cash Forecast Points - populated from real backend API, with fallback to generator
+  const [forecastData, setForecastData] = useState<CashForecastPoint[]>(() =>
+    generateCashForecastPoints(duplicateHoldExecuted)
+  );
+
+  // Key KPI values - populated from real backend API dashboard summary, with reactive fallbacks
+  const [backendAvailableCash, setBackendAvailableCash] = useState<number | null>(null);
+  const [backendNetCashFlow30d, setBackendNetCashFlow30d] = useState<number | null>(null);
+  const [backendOpenRiskCount, setBackendOpenRiskCount] = useState<number | null>(null);
+  const [isBackendConnected, setIsBackendConnected] = useState<boolean>(false);
+
+  const fallbackAvailableCash = 18200000;
+  const availableCash = backendAvailableCash !== null ? backendAvailableCash : fallbackAvailableCash;
+
+  const fallbackNetCashFlow30d = useMemo(() => {
+    const inflows = transactions.filter(t => t.type === 'inflow').reduce((acc, t) => acc + t.amount, 0);
+    const outflows = transactions.filter(t => t.type === 'outflow').reduce((acc, t) => acc + t.amount, 0);
+    return inflows - outflows;
+  }, [transactions]);
+  const netCashFlow30d = backendNetCashFlow30d !== null ? backendNetCashFlow30d : fallbackNetCashFlow30d;
+
+  const outstandingPayables = useMemo(() => {
+    return invoices
+      .filter(inv => inv.status === 'pending_approval' || inv.status === 'approved' || inv.status === 'overdue')
+      .reduce((acc, inv) => acc + inv.amount, 0);
+  }, [invoices]);
+
+  const fallbackCriticalRisksCount = useMemo(() => {
+    return anomalies.filter(a => a.severity === 'critical' && (a.status === 'open' || a.status === 'under_review')).length;
+  }, [anomalies]);
+  const openCriticalRisksCount = backendOpenRiskCount !== null ? backendOpenRiskCount : fallbackCriticalRisksCount;
+
+  // Real backend data integration: Dashboard KPIs, Risks, Budgets, Forecast
+  useEffect(() => {
+    let isSubscribed = true;
+
+    async function loadBackendData() {
+      try {
+        const [summary, risks, deptBudgets, forecast] = await Promise.all([
+          fetchDashboardSummary().catch(err => {
+            console.warn('Dashboard summary fetch failed, using fallback:', err);
+            return null;
+          }),
+          fetchRiskAlerts().catch(err => {
+            console.warn('Risk alerts fetch failed, using fallback:', err);
+            return null;
+          }),
+          fetchDepartmentBudgets().catch(err => {
+            console.warn('Department budgets fetch failed, using fallback:', err);
+            return null;
+          }),
+          fetchCashForecast(90).catch(err => {
+            console.warn('Cash forecast fetch failed, using fallback:', err);
+            return null;
+          })
+        ]);
+
+        if (!isSubscribed) return;
+
+        if (summary) {
+          setBackendAvailableCash(summary.total_balance);
+          setBackendNetCashFlow30d(summary.monthly_inflow - summary.monthly_outflow);
+          setBackendOpenRiskCount(summary.open_risk_count);
+          setIsBackendConnected(true);
+        }
+
+        if (risks && risks.length > 0) {
+          setAnomalies(risks);
+        }
+
+        if (deptBudgets && deptBudgets.length > 0) {
+          setBudgets(deptBudgets);
+        }
+
+        if (forecast && forecast.points && forecast.points.length > 0) {
+          setForecastData(forecast.points);
+        }
+      } catch (err) {
+        console.warn('Backend initialization error:', err);
+      }
+    }
+
+    loadBackendData();
+
+    return () => {
+      isSubscribed = false;
+    };
+  }, [duplicateHoldExecuted]);
+
+  // Actions
+  const refreshSource = (id: string) => {
+    setSources(prev => prev.map(s => {
+      if (s.id === id) {
+        return {
+          ...s,
+          lastSyncTime: 'Just now',
+          status: 'connected',
+          recordCount: s.recordCount + 4
+        };
+      }
+      return s;
+    }));
+    showToast('Source connection synchronized successfully', 'success');
+  };
+
+  const addTransaction = (txn: Omit<Transaction, 'id'>) => {
+    const newTxn: Transaction = {
+      ...txn,
+      id: `TXN-${Math.floor(8100 + Math.random() * 900)}`
+    };
+    setTransactions(prev => [newTxn, ...prev]);
+    showToast(`Transaction ${newTxn.referenceNo} recorded`, 'success');
+  };
+
+  const importTransactions = (newTxns: Transaction[]) => {
+    setTransactions(prev => [...newTxns, ...prev]);
+    showToast(`Successfully imported ${newTxns.length} transactions`, 'success');
+  };
+
+  const updateAnomalyStatus = (id: string, status: AnomalyRecord['status'], note?: string, dismissReason?: string) => {
+    setAnomalies(prev => prev.map(a => {
+      if (a.id === id) {
+        const historyItem = {
+          timestamp: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) + ' IST',
+          user: role === 'manager' ? 'Rajesh Gopinathan (Finance Manager)' : 'Pooja Sharma (Analyst)',
+          action: `Status changed to ${status.replace('_', ' ').toUpperCase()}`,
+          note: note || (dismissReason ? `Dismissed: ${dismissReason}` : 'Status updated via Risk Drawer')
+        };
+        return {
+          ...a,
+          status,
+          dismissReason: dismissReason || a.dismissReason,
+          reviewHistory: [historyItem, ...(a.reviewHistory || [])]
+        };
+      }
+      return a;
+    }));
+
+    // Call backend API to persist state
+    takeRiskAction(id, status, note, dismissReason).catch(err => {
+      console.warn(`Could not sync risk action for ${id} to backend:`, err);
+    });
+
+    showToast(`Anomaly ${id} marked as ${status.replace('_', ' ')}`, 'info');
+  };
+
+  const assignAnomaly = (id: string, assignee: string) => {
+    setAnomalies(prev => prev.map(a => a.id === id ? { ...a, assignedTo: assignee } : a));
+    showToast(`Anomaly assigned to ${assignee}`, 'info');
+  };
+
+  const placeInvoiceHold = (invoiceId: string) => {
+    setInvoices(prev => prev.map(inv => inv.id === invoiceId ? { ...inv, status: 'on_hold' } : inv));
+    setPaymentSchedule(prev => prev.map(item => item.invoiceId === invoiceId ? { ...item, status: 'on_hold' } : item));
+    showToast(`Invoice ${invoiceId} placed on payment hold`, 'warning');
+  };
+
+  const reallocateBudget = (fromDeptId: string, toDeptId: string, amount: number, reason: string) => {
+    setBudgets(prev => prev.map(dept => {
+      if (dept.id === fromDeptId) {
+        return {
+          ...dept,
+          allocated: dept.allocated - amount,
+          varianceAmount: dept.varianceAmount + amount,
+          variancePercentage: Number((((dept.spent - (dept.allocated - amount)) / (dept.allocated - amount)) * 100).toFixed(1))
+        };
+      }
+      if (dept.id === toDeptId) {
+        const newAllocated = dept.allocated + amount;
+        const newVariance = dept.spent - newAllocated;
+        return {
+          ...dept,
+          allocated: newAllocated,
+          varianceAmount: newVariance,
+          variancePercentage: Number(((newVariance / newAllocated) * 100).toFixed(1)),
+          status: newVariance > 0 ? 'over_budget' : 'on_track'
+        };
+      }
+      return dept;
+    }));
+    showToast(`Reallocated ${formatINR(amount)} successfully`, 'success');
+  };
+
+  // Proposal Workflow
+  const createProposal = (proposalData: Omit<DecisionProposal, 'id' | 'createdAt' | 'updatedAt' | 'status'>) => {
+    const newProposal: DecisionProposal = {
+      ...proposalData,
+      id: `PROP-2024-${Math.floor(100 + Math.random() * 900)}`,
+      createdAt: new Date().toLocaleDateString('en-IN') + ' ' + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) + ' IST',
+      updatedAt: new Date().toLocaleDateString('en-IN') + ' ' + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) + ' IST',
+      status: 'draft'
+    };
+    setProposals(prev => [newProposal, ...prev]);
+    showToast(`Created proposal: ${newProposal.title}`, 'info');
+    return newProposal;
+  };
+
+  const submitProposalForApproval = (id: string) => {
+    setProposals(prev => prev.map(p => {
+      if (p.id === id) {
+        return {
+          ...p,
+          status: 'pending_approval',
+          updatedAt: new Date().toLocaleDateString('en-IN') + ' ' + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) + ' IST'
+        };
+      }
+      return p;
+    }));
+    showToast('Proposal submitted for Finance Manager sign-off', 'info');
+  };
+
+  const approveProposal = (id: string) => {
+    if (role !== 'manager') {
+      showToast('Permission Denied: Only Finance Manager role can approve proposals. Please switch role in top bar.', 'error');
+      return;
+    }
+    setProposals(prev => prev.map(p => {
+      if (p.id === id) {
+        return {
+          ...p,
+          status: 'approved',
+          updatedAt: new Date().toLocaleDateString('en-IN') + ' ' + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) + ' IST'
+        };
+      }
+      return p;
+    }));
+    showToast('Proposal successfully approved! Ready for execution.', 'success');
+  };
+
+  const rejectProposal = (id: string, reason: string) => {
+    if (role !== 'manager') {
+      showToast('Permission Denied: Only Finance Manager role can reject proposals.', 'error');
+      return;
+    }
+    setProposals(prev => prev.map(p => {
+      if (p.id === id) {
+        return {
+          ...p,
+          status: 'rejected',
+          rejectionReason: reason,
+          updatedAt: new Date().toLocaleDateString('en-IN') + ' ' + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) + ' IST'
+        };
+      }
+      return p;
+    }));
+    showToast('Proposal rejected with documented rationale', 'warning');
+  };
+
+  /**
+   * The Core Connected Demo Execution:
+   * When user executes an approved proposal, e.g. Payment Hold on Duplicate Invoice INV-2024-8849:
+   * 1. Proposal status -> 'executed'
+   * 2. Invoice INV-2024-8849 status -> 'on_hold'
+   * 3. PaymentScheduleItem -> 'on_hold'
+   * 4. Anomaly ANOM-2024-001 -> 'held'
+   * 5. duplicateHoldExecuted -> true (forecast recomputes instantly)
+   */
+  const executeProposal = (id: string) => {
+    const proposal = proposals.find(p => p.id === id);
+    if (!proposal) return;
+
+    if (proposal.status !== 'approved') {
+      showToast('Proposal must be approved by Finance Manager before execution.', 'error');
+      return;
+    }
+
+    if (proposal.type === 'payment_hold' && proposal.targetEntityId === 'INV-2024-8849') {
+      setDuplicateHoldExecuted(true);
+      setInvoices(prev => prev.map(inv => inv.id === 'INV-2024-8849' ? { ...inv, status: 'on_hold' } : inv));
+      setPaymentSchedule(prev => prev.map(item => item.invoiceId === 'INV-2024-8849' ? { ...item, status: 'on_hold' } : item));
+      updateAnomalyStatus('ANOM-2024-001', 'held', 'Payment hold executed following formal proposal approval.');
+      
+      setProposals(prev => prev.map(p => p.id === id ? {
+        ...p,
+        status: 'executed',
+        executionResultSummary: 'Automated hold placed on HDFC & RazorpayX payout gateways. ₹6,80,000 disbursement blocked.',
+        updatedAt: new Date().toLocaleDateString('en-IN') + ' ' + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) + ' IST'
+      } : p));
+
+      showToast('ACTION EXECUTED: Invoice #INV-2024-8849 placed on hold! Cash forecast & AP schedules updated.', 'success');
+      return;
+    }
+
+    if (proposal.type === 'budget_reallocation') {
+      reallocateBudget('dept-eng', 'dept-mktg', 450000, 'Approved Q3 Festive Marketing Reallocation');
+      setProposals(prev => prev.map(p => p.id === id ? {
+        ...p,
+        status: 'executed',
+        executionResultSummary: 'Transferred ₹4,50,000 from Engineering surplus to Marketing & Growth ledger.',
+        updatedAt: new Date().toLocaleDateString('en-IN') + ' ' + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) + ' IST'
+      } : p));
+      showToast('ACTION EXECUTED: ₹4,50,000 budget reallocated across departments.', 'success');
+      return;
+    }
+
+    // Default proposal execution
+    setProposals(prev => prev.map(p => p.id === id ? {
+      ...p,
+      status: 'executed',
+      executionResultSummary: 'Financial decision executed in ERP and banking ledger.',
+      updatedAt: new Date().toLocaleDateString('en-IN') + ' ' + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) + ' IST'
+    } : p));
+    showToast('Decision executed successfully', 'success');
+  };
+
+  const toggleRule = (id: string) => {
+    setWorkflowRules(prev => prev.map(r => r.id === id ? { ...r, isActive: !r.isActive } : r));
+    showToast('Workflow rule status toggled', 'info');
+  };
+
+  const addWorkflowRule = (ruleData: Omit<WorkflowRule, 'id' | 'triggerCount'>) => {
+    const newRule: WorkflowRule = {
+      ...ruleData,
+      id: `RULE-WF-${Math.floor(10 + Math.random() * 90)}`,
+      triggerCount: 0
+    };
+    setWorkflowRules(prev => [...prev, newRule]);
+    showToast(`New workflow rule created: ${newRule.name}`, 'success');
+  };
+
+  // Deterministic What-If Simulation Engine
+  const simulationResult = useMemo<SimulationResult>(() => {
+    return calculateScenario(simulationParams, forecastData, duplicateHoldExecuted);
+  }, [simulationParams, forecastData, duplicateHoldExecuted]);
+
+  const saveScenario = (name: string, notes: string = '') => {
+    const newScenario: SavedScenario = {
+      id: `SCEN-${Math.floor(10 + Math.random() * 90)}`,
+      name,
+      createdAt: new Date().toISOString().slice(0, 10),
+      params: { ...simulationParams },
+      endingCash: simulationResult.endingCash,
+      lowestCash: simulationResult.lowestCash,
+      deltaCash: simulationResult.deltaCash,
+      notes: notes || `Simulated with revenue ${simulationParams.revenueChangePct}%, delay ${simulationParams.collectionDelayDays}d`
+    };
+    setSavedScenarios(prev => [newScenario, ...prev]);
+    showToast(`Scenario "${name}" saved`, 'success');
+  };
+
+  const loadScenario = (scenario: SavedScenario) => {
+    setSimulationParams({ ...scenario.params });
+    showToast(`Loaded scenario: ${scenario.name}`, 'info');
+  };
+
+  const deleteScenario = (id: string) => {
+    setSavedScenarios(prev => prev.filter(s => s.id !== id));
+    showToast('Saved scenario deleted', 'info');
+  };
+
+  const resetSimulation = () => {
+    setSimulationParams(defaultSimulationParams);
+    showToast('Simulation reset to baseline', 'info');
+  };
+
+  // Copilot Logic
+  const sendCopilotMessage = (text: string) => {
+    const userMsg: CopilotMessage = {
+      id: `msg-${Date.now()}`,
+      sender: 'user',
+      timestamp: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
+      text
+    };
+
+    setCopilotMessages(prev => [...prev, userMsg]);
+
+    // Simulated Copilot intelligence matching prompt queries
+    setTimeout(() => {
+      let replyText = '';
+      let citations: CopilotMessage['citations'] = [];
+      let suggestedActions: CopilotMessage['suggestedActions'] = [];
+
+      const lower = text.toLowerCase();
+
+      if (lower.includes('cash balance') || lower.includes('fall') || lower.includes('decline') || lower.includes('shortfall')) {
+        replyText = `### Cash Balance Driver Analysis\n\nProjected cash dips near Day 48 due to three compounding cash events:\n1. **High AP Outflow Clustering**: ₹38.5 L Server PO (HyperScale Systems) + ₹18.5 L Performance Marketing ad spends.\n2. **Duplicate Invoice Drain**: Duplicate invoice #INV-2024-8849 (₹6,80,000) scheduled for release on 28 Sep.\n3. **Receivables Lag**: ₹75.0 L in enterprise client receivables aged 30+ days.\n\n**Recommendation**: Executing a payment hold on #INV-2024-8849 saves ₹6,80,000 immediately and maintains cash reserves safely above ₹25 L.`;
+        citations = [
+          { type: 'invoice', title: 'Duplicate INV-2024-8849', referenceId: 'INV-2024-8849' },
+          { type: 'risk', title: 'Cash Shortage Risk', referenceId: 'ANOM-2024-001' }
+        ];
+        suggestedActions = [
+          { label: 'View Duplicate Anomaly Evidence', actionType: 'navigate', payload: '/risk-anomalies' },
+          { label: 'Review Payment Hold Proposal', actionType: 'navigate', payload: '/decisions-approvals' }
+        ];
+      } else if (lower.includes('invoice') || lower.includes('review') || lower.includes('duplicate')) {
+        replyText = `### Invoices Requiring Urgent Review\n\nThere are **2 invoices** requiring senior finance sign-off:\n\n1. **#INV-2024-8849** from **Zenith Cloud Services** (₹6,80,000) — *Critical duplicate candidate*. Exact match with settled #INV-2024-8841.\n2. **#INV-2024-8902** from **HyperScale Systems** (₹38,50,000) — *9.1x outlier against historical spend*. Dual sign-off required.\n3. **#INV-2024-8660** from **Shardul Amarchand** (₹7,50,000) — *Overdue by 4 days*.`;
+        citations = [
+          { type: 'invoice', title: 'INV-2024-8849 (Duplicate)', referenceId: 'INV-2024-8849' },
+          { type: 'invoice', title: 'INV-2024-8902 (Outlier PO)', referenceId: 'INV-2024-8902' }
+        ];
+        suggestedActions = [
+          { label: 'Go to AP & Invoices', actionType: 'navigate', payload: '/ap-expenses' },
+          { label: 'Open Duplicate Evidence', actionType: 'navigate', payload: '/risk-anomalies' }
+        ];
+      } else if (lower.includes('marketing') || lower.includes('budget') || lower.includes('over budget')) {
+        replyText = `### Marketing Budget Overrun Diagnosis\n\nMarketing & Growth spend is **₹48,60,000** against an allocated budget of **₹45,00,000** (**+18.0% unfavorable variance**).\n\n**Root Cause**: Unplanned festive paid acquisition push on Google Performance Max & Meta ads.\n\n**Remedy Available**: Engineering has a projected month-end surplus of ₹10,00,000. FINVORA has drafted an automated inter-department reallocation of ₹4,50,000 to balance the ledger.`;
+        citations = [
+          { type: 'department', title: 'Marketing & Growth Budget', referenceId: 'dept-mktg' },
+          { type: 'risk', title: 'Budget Deviation ANOM-2024-003', referenceId: 'ANOM-2024-003' }
+        ];
+        suggestedActions = [
+          { label: 'Review Budget Reallocations', actionType: 'navigate', payload: '/budget-intelligence' },
+          { label: 'View Pending Proposal', actionType: 'navigate', payload: '/decisions-approvals' }
+        ];
+      } else if (lower.includes('15 days') || lower.includes('delay') || lower.includes('late')) {
+        replyText = `### Simulation: 15-Day Collection Delay Impact\n\nIf customer receivables are delayed by 15 days:\n- Operating cash drops by **₹22.4 Lakhs** during Days 20–35.\n- Lowest cash balance reaches **₹1.18 Cr**.\n- No insolvency occurs, but short-term liquidity buffer dips to 6.2 days of runway.\n\n**Action**: Reschedule non-critical vendor disbursements or run What-If stress test.`;
+        suggestedActions = [
+          { label: 'Run Scenario in What-If Simulator', actionType: 'navigate', payload: '/what-if' }
+        ];
+      } else {
+        replyText = `FINVORA Demo Copilot is connected to your live financial ledger. In this demo workspace, I can analyze:\n- Duplicate invoices and payment holds\n- Cash-flow shortfall drivers and 30/60/90-day forecasts\n- Departmental budget overruns (e.g. Marketing)\n- Working capital delays and What-If scenario simulations.\n\nPlease ask about any of these topics or choose a suggested prompt below.`;
+        suggestedActions = [
+          { label: 'Why is cash balance declining?', actionType: 'filter', payload: 'cash_decline' },
+          { label: 'Which invoices need review?', actionType: 'filter', payload: 'invoices_review' },
+          { label: 'Why is marketing over budget?', actionType: 'filter', payload: 'marketing_budget' }
+        ];
+      }
+
+      const botMsg: CopilotMessage = {
+        id: `msg-${Date.now() + 1}`,
+        sender: 'finvora',
+        timestamp: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
+        text: replyText,
+        citations,
+        suggestedActions
+      };
+
+      setCopilotMessages(prev => [...prev, botMsg]);
+    }, 650);
+  };
+
+  const resetDemoData = () => {
+    localStorage.removeItem(`${LOCAL_STORAGE_KEY}_sources`);
+    localStorage.removeItem(`${LOCAL_STORAGE_KEY}_txns`);
+    localStorage.removeItem(`${LOCAL_STORAGE_KEY}_anomalies`);
+    localStorage.removeItem(`${LOCAL_STORAGE_KEY}_invoices`);
+    localStorage.removeItem(`${LOCAL_STORAGE_KEY}_budgets`);
+    localStorage.removeItem(`${LOCAL_STORAGE_KEY}_schedule`);
+    localStorage.removeItem(`${LOCAL_STORAGE_KEY}_proposals`);
+    localStorage.removeItem(`${LOCAL_STORAGE_KEY}_rules`);
+    localStorage.removeItem(`${LOCAL_STORAGE_KEY}_scenarios`);
+    localStorage.removeItem(`${LOCAL_STORAGE_KEY}_duplicate_held`);
+
+    setSources(INITIAL_DATA_SOURCES);
+    setTransactions(INITIAL_TRANSACTIONS);
+    setAnomalies(INITIAL_ANOMALIES);
+    setInvoices(INITIAL_INVOICES);
+    setBudgets(INITIAL_DEPARTMENT_BUDGETS);
+    setPaymentSchedule(INITIAL_PAYMENT_SCHEDULE);
+    setProposals(INITIAL_DECISION_PROPOSALS);
+    setWorkflowRules(INITIAL_WORKFLOW_RULES);
+    setDuplicateHoldExecuted(false);
+    setSimulationParams(defaultSimulationParams);
+
+    showToast('Demo workspace reset to initial connected state', 'info');
+  };
+
+  return (
+    <FinancialContext.Provider
+      value={{
+        role,
+        setRole,
+        workspaceName,
+        dateRange,
+        setDateRange,
+        themeMode,
+        actualTheme,
+        setThemeMode,
+        toggleTheme,
+        sources,
+        qualityIssues,
+        transactions,
+        anomalies,
+        invoices,
+        budgets,
+        paymentSchedule,
+        proposals,
+        workflowRules,
+        forecastData,
+        availableCash,
+        netCashFlow30d,
+        outstandingPayables,
+        openCriticalRisksCount,
+        refreshSource,
+        addTransaction,
+        importTransactions,
+        updateAnomalyStatus,
+        assignAnomaly,
+        placeInvoiceHold,
+        reallocateBudget,
+        createProposal,
+        submitProposalForApproval,
+        approveProposal,
+        rejectProposal,
+        executeProposal,
+        toggleRule,
+        addWorkflowRule,
+        simulationParams,
+        setSimulationParams,
+        simulationResult,
+        savedScenarios,
+        saveScenario,
+        loadScenario,
+        deleteScenario,
+        resetSimulation,
+        copilotOpen,
+        setCopilotOpen,
+        copilotMessages,
+        sendCopilotMessage,
+        toasts,
+        showToast,
+        resetDemoData,
+        duplicateHoldExecuted,
+        isBackendConnected
+      }}
+    >
+      {children}
+    </FinancialContext.Provider>
+  );
+};
+
+export const useFinancial = () => {
+  const context = useContext(FinancialContext);
+  if (!context) {
+    throw new Error('useFinancial must be used within a FinancialProvider');
+  }
+  return context;
+};

@@ -1,0 +1,287 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root, .light {
+    --app-bg: #F8F9FA;
+    --app-bg-gradient: radial-gradient(ellipse 90% 60% at 20% -10%, rgba(245, 158, 11, 0.07) 0%, transparent 60%),
+                       radial-gradient(ellipse 70% 50% at 85% 15%, rgba(56, 189, 248, 0.05) 0%, transparent 60%),
+                       #F8F9FA;
+    --sidebar-bg: rgba(255, 255, 255, 0.90);
+    --sidebar-border: rgba(226, 232, 240, 0.90);
+    --topbar-bg: rgba(255, 255, 255, 0.88);
+    --topbar-border: rgba(226, 232, 240, 0.90);
+
+    /* Glass Surfaces */
+    --card-bg: rgba(255, 255, 255, 0.76);
+    --card-bg-elevated: rgba(255, 255, 255, 0.94);
+    --card-hover: rgba(255, 255, 255, 0.94);
+    --card-border: rgba(255, 255, 255, 0.92);
+    --card-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.06), 0 1px 3px 0 rgba(15, 23, 42, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+    --card-shadow-hover: 0 16px 36px -6px rgba(15, 23, 42, 0.12), 0 6px 12px -2px rgba(15, 23, 42, 0.06), inset 0 1px 0 rgba(255, 255, 255, 1);
+
+    /* Typography */
+    --text-primary: #18202B;
+    --text-secondary: #596474;
+    --text-muted: #8C96A5;
+
+    /* Accents & Status */
+    --accent: #D97706;
+    --accent-hover: #B45309;
+    --accent-light: rgba(245, 158, 11, 0.12);
+    --accent-border: rgba(245, 158, 11, 0.35);
+
+    --positive: #059669;
+    --positive-light: rgba(5, 150, 105, 0.09);
+    --positive-border: rgba(5, 150, 105, 0.28);
+
+    --warning: #D97706;
+    --warning-light: rgba(217, 119, 6, 0.09);
+    --warning-border: rgba(217, 119, 6, 0.28);
+
+    --critical: #E11D48;
+    --critical-light: rgba(225, 29, 72, 0.09);
+    --critical-border: rgba(225, 29, 72, 0.28);
+
+    /* Surfaces & Inputs */
+    --surface-subtle: rgba(15, 23, 42, 0.03);
+    --surface-muted: rgba(15, 23, 42, 0.06);
+    --input-bg: rgba(255, 255, 255, 0.92);
+    --input-border: rgba(203, 213, 225, 0.85);
+    --dialog-bg: #FFFFFF;
+    --divider: rgba(226, 232, 240, 0.85);
+
+    /* Charts */
+    --chart-actual: #059669;
+    --chart-forecast: #D97706;
+    --chart-grid: #E2E8F0;
+    --chart-tooltip-bg: rgba(255, 255, 255, 0.96);
+    --chart-tooltip-border: rgba(203, 213, 225, 0.8);
+    --chart-tooltip-text: #18202B;
+
+    --scrollbar-track: #F1F5F9;
+    --scrollbar-thumb: #CBD5E1;
+  }
+
+  .dark {
+    --app-bg: #101110;
+    --app-bg-gradient: radial-gradient(ellipse 90% 60% at 20% -10%, rgba(245, 166, 35, 0.05) 0%, transparent 60%),
+                       radial-gradient(ellipse 70% 50% at 85% 20%, rgba(255, 255, 255, 0.02) 0%, transparent 60%),
+                       #101110;
+    --sidebar-bg: rgba(20, 22, 21, 0.94);
+    --sidebar-border: rgba(255, 255, 255, 0.07);
+    --topbar-bg: rgba(16, 17, 16, 0.90);
+    --topbar-border: rgba(255, 255, 255, 0.07);
+
+    /* Glass Surfaces */
+    --card-bg: rgba(26, 29, 27, 0.72);
+    --card-bg-elevated: rgba(32, 36, 34, 0.92);
+    --card-hover: rgba(34, 38, 35, 0.86);
+    --card-border: rgba(255, 255, 255, 0.08);
+    --card-shadow: 0 4px 24px -1px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    --card-shadow-hover: 0 16px 40px -4px rgba(0, 0, 0, 0.65), 0 6px 16px -2px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+
+    /* Typography */
+    --text-primary: #F4F5F2;
+    --text-secondary: #A6ADA8;
+    --text-muted: #6E7570;
+
+    /* Accents & Status */
+    --accent: #F5A623;
+    --accent-hover: #D97706;
+    --accent-light: rgba(245, 166, 35, 0.12);
+    --accent-border: rgba(245, 166, 35, 0.3);
+
+    --positive: #10B981;
+    --positive-light: rgba(16, 185, 129, 0.12);
+    --positive-border: rgba(16, 185, 129, 0.25);
+
+    --warning: #F59E0B;
+    --warning-light: rgba(245, 158, 11, 0.12);
+    --warning-border: rgba(245, 158, 11, 0.25);
+
+    --critical: #F43F5E;
+    --critical-light: rgba(244, 63, 94, 0.12);
+    --critical-border: rgba(244, 63, 94, 0.25);
+
+    /* Surfaces & Inputs */
+    --surface-subtle: rgba(255, 255, 255, 0.03);
+    --surface-muted: rgba(255, 255, 255, 0.06);
+    --input-bg: rgba(16, 17, 16, 0.85);
+    --input-border: rgba(255, 255, 255, 0.1);
+    --dialog-bg: #141615;
+    --divider: rgba(255, 255, 255, 0.07);
+
+    /* Charts */
+    --chart-actual: #10B981;
+    --chart-forecast: #F5A623;
+    --chart-grid: #222624;
+    --chart-tooltip-bg: rgba(26, 29, 27, 0.95);
+    --chart-tooltip-border: rgba(255, 255, 255, 0.12);
+    --chart-tooltip-text: #F4F5F2;
+
+    --scrollbar-track: #141615;
+    --scrollbar-thumb: #2D3330;
+  }
+
+  body {
+    background: var(--app-bg-gradient);
+    background-attachment: fixed;
+    background-color: var(--app-bg);
+    color: var(--text-primary);
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+
+  /* Custom styled scrollbars */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 9999px;
+  }
+}
+
+@layer utilities {
+  .glass-card {
+    background-color: var(--card-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--card-border);
+    box-shadow: var(--card-shadow);
+    transition: transform 0.24s cubic-bezier(0.16, 1, 0.3, 1),
+                box-shadow 0.24s cubic-bezier(0.16, 1, 0.3, 1),
+                border-color 0.24s ease,
+                background-color 0.24s ease;
+    will-change: transform, box-shadow;
+  }
+
+  .glass-card:hover {
+    transform: translateY(-2.5px);
+    background-color: var(--card-hover);
+    box-shadow: var(--card-shadow-hover);
+  }
+
+  .dark .glass-card {
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .dark .glass-card:hover {
+    border-color: rgba(255, 255, 255, 0.16);
+  }
+
+  .light .glass-card {
+    border: 1px solid rgba(255, 255, 255, 0.92);
+    outline: 1px solid rgba(148, 163, 184, 0.18);
+  }
+
+  .light .glass-card:hover {
+    outline-color: rgba(148, 163, 184, 0.36);
+  }
+
+  .glass-card-hover:hover {
+    transform: translateY(-2.5px);
+    background-color: var(--card-hover);
+    box-shadow: var(--card-shadow-hover);
+  }
+
+  .liquid-surface {
+    background-color: var(--card-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--card-border);
+    box-shadow: var(--card-shadow);
+  }
+
+  .light .liquid-surface {
+    outline: 1px solid rgba(148, 163, 184, 0.16);
+  }
+
+  .glass-panel {
+    background-color: var(--sidebar-bg);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border-color: var(--divider);
+  }
+
+  /* AI Button Radiant Shine & Shimmer Animation */
+  @keyframes ai-shimmer {
+    0% {
+      transform: translateX(-160%) skewX(-20deg);
+    }
+    30%, 100% {
+      transform: translateX(220%) skewX(-20deg);
+    }
+  }
+
+  @keyframes ai-pulse-glow {
+    0%, 100% {
+      opacity: 0.65;
+      transform: scale(1);
+      filter: blur(8px);
+    }
+    50% {
+      opacity: 0.98;
+      transform: scale(1.08);
+      filter: blur(13px);
+    }
+  }
+
+  @keyframes ai-star-twinkle {
+    0%, 100% {
+      transform: scale(1) rotate(0deg);
+      opacity: 0.9;
+    }
+    50% {
+      transform: scale(1.22) rotate(14deg);
+      opacity: 1;
+    }
+  }
+
+  .animate-ai-shimmer {
+    animation: ai-shimmer 3s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  }
+
+  .animate-ai-glow {
+    animation: ai-pulse-glow 2.8s ease-in-out infinite;
+  }
+
+  .animate-ai-star {
+    animation: ai-star-twinkle 2.2s ease-in-out infinite;
+  }
+
+  .ai-shine-sheen {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 65%;
+    height: 100%;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.2) 20%,
+      rgba(255, 255, 255, 0.85) 50%,
+      rgba(255, 255, 255, 0.2) 80%,
+      transparent 100%
+    );
+    pointer-events: none;
+    transform: translateX(-160%) skewX(-20deg);
+    animation: ai-shimmer 3.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  }
+}
+
+/* Auto-hide and send navigation dock to background when any drawer, modal, or copilot is open */
+body.drawer-open .finvora-dock-wrapper,
+body.modal-open .finvora-dock-wrapper,
+body.copilot-open .finvora-dock-wrapper {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transform: translateY(24px) scale(0.95) !important;
+  transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
