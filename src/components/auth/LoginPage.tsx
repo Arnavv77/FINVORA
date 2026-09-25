@@ -265,7 +265,7 @@ export const LoginPage: React.FC = () => {
                 <span>Cash Forecasting</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-purple-400 shadow-[0_0_8px_rgba(192,132,252,0.9)]" />
+                <span className="w-1.5 h-1.5 rounded-full bg-[#F59E0B] shadow-[0_0_8px_rgba(245,158,11,0.9)]" />
                 <span>Decision Automation</span>
               </div>
             </div>

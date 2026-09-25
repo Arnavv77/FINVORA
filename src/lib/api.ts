@@ -1,4 +1,4 @@
-import { AnomalyRecord, DepartmentBudget, CashForecastPoint, FinvoraRecommendation } from '../types';
+import { AnomalyRecord, DepartmentBudget, CashForecastPoint, FinvoraRecommendation, RiskReasonItem, ForecastRiskLevel } from '../types';
 
 const API_BASE = 'http://127.0.0.1:8000/api';
 
@@ -16,6 +16,11 @@ export interface ForecastApiResponse {
   predicted: number[];
   baseline: number[];
   scenario_label?: string;
+  buffer_amount?: number;
+  risk_level?: ForecastRiskLevel;
+  projected_closing_cash?: number;
+  risk_reasons?: RiskReasonItem[];
+  suggested_actions?: string[];
 }
 
 export interface SimulationAdjustment {

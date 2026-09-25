@@ -150,6 +150,16 @@ export interface CashForecastPoint {
   netCashFlow: number;
 }
 
+export type ForecastRiskLevel = 'SAFE' | 'WATCH' | 'HIGH_RISK' | 'CRITICAL';
+
+export interface RiskReasonItem {
+  category: 'invoice' | 'budget' | 'trend';
+  title: string;
+  detail: string;
+  impact_amount?: number;
+  entity_name?: string;
+}
+
 export interface AgingBucket {
   range: string;
   amount: number;

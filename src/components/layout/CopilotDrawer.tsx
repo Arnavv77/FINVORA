@@ -121,7 +121,7 @@ export const CopilotDrawer: React.FC = () => {
       query: 'Why is marketing department over budget?'
     },
     {
-      icon: <Clock className="w-3.5 h-3.5 text-purple-500" />,
+      icon: <Clock className="w-3.5 h-3.5 text-amber-500" />,
       label: '15-day late payment',
       query: 'What happens if customer payments arrive 15 days late?'
     }
@@ -310,7 +310,7 @@ export const CopilotDrawer: React.FC = () => {
                         <span>{msg.kpis.feasibility}% Feasibility</span>
                       </div>
                       {msg.kpis.impact && (
-                        <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">
+                        <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
                           <ShieldCheck className="w-2.5 h-2.5 shrink-0" />
                           <span>{msg.kpis.impact}</span>
                         </div>

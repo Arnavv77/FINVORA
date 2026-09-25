@@ -496,7 +496,7 @@ export function DockIconBudgetIntelligence({ className }: { className?: string }
 
 export function DockIconWhatIf({ className }: { className?: string }) {
     return (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={cn("w-full h-full text-purple-500", className)}>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={cn("w-full h-full text-amber-500", className)}>
             <line x1="4" x2="4" y1="21" y2="14" />
             <line x1="4" x2="4" y1="10" y2="3" />
             <line x1="12" x2="12" y1="21" y2="12" />

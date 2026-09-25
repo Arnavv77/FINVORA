@@ -180,12 +180,25 @@ class CashForecastPointOut(BaseModel):
     netCashFlow: float
 
 
+class RiskReasonItem(BaseModel):
+    category: str  # "invoice" | "budget" | "trend"
+    title: str
+    detail: str
+    impact_amount: Optional[float] = None
+    entity_name: Optional[str] = None
+
+
 class ForecastResponse(BaseModel):
     points: List[CashForecastPointOut]
     dates: List[str]
     predicted: List[float]
     baseline: List[float]
     scenario_label: Optional[str] = None
+    buffer_amount: Optional[float] = 10_000_000.0
+    risk_level: Optional[str] = "SAFE"  # SAFE | WATCH | HIGH_RISK | CRITICAL
+    projected_closing_cash: Optional[float] = 0.0
+    risk_reasons: Optional[List[RiskReasonItem]] = []
+    suggested_actions: Optional[List[str]] = []
 
 
 # ────────────────────────── Simulate ───────────────────────────
