@@ -48,7 +48,8 @@ import {
 } from '../types';
 import {
   DEFAULT_SIMULATION_PARAMS,
-  interpretScenarioPrompt
+  interpretScenarioPrompt,
+  calculateScenario
 } from '../utils/scenarioEngine';
 import { simulateScenario, sendCopilotChat } from '../lib/api';
 
@@ -74,7 +75,9 @@ export const WhatIfSimulatorPage: React.FC = () => {
     role,
     availableCash,
     actualTheme,
-    showToast
+    showToast,
+    forecastData,
+    duplicateHoldExecuted
   } = useFinancial();
 
   const isLight = actualTheme === 'light';
@@ -217,6 +220,10 @@ export const WhatIfSimulatorPage: React.FC = () => {
   // Run the staged scenario through the deterministic engine and backend simulate API
   const handleExecuteScenario = (paramsToRun?: SimulationParams) => {
     const activeParams = paramsToRun || stagedParams;
+
+    // 1. Calculate FRESH results synchronously using activeParams to eliminate stale closure state
+    const freshResult = calculateScenario(activeParams, forecastData || [], duplicateHoldExecuted);
+
     setPreviousResult(simulationResult);
     setSimulationParams(activeParams);
     setHasRunScenario(true);
@@ -231,7 +238,7 @@ export const WhatIfSimulatorPage: React.FC = () => {
       adjustments.push({ type: 'add_expense', amount: Math.abs(activeParams.expenseChangePct) * 10000 });
     }
     if (adjustments.length > 0) {
-      simulateScenario(adjustments, activeParams.horizonDays || 30).catch(err => {
+      simulateScenario(adjustments, activeParams.horizonDays || 60).catch(err => {
         console.warn('Backend simulate call failed:', err);
       });
     }
@@ -240,33 +247,89 @@ export const WhatIfSimulatorPage: React.FC = () => {
       setActiveMobileTab('results');
     }
 
-    // Append calculation explanation to chat
-    setTimeout(() => {
-      const isDeficit = simulationResult.endingCash < simulationResult.baselineEndingCash;
-      const resultMsg: ScenarioChatMessage = {
-        id: `ast-run-${Date.now()}`,
-        sender: 'assistant',
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        text: `Scenario executed. ${
-          isDeficit
-            ? `Ending cash contracts by ${formatINR(Math.abs(simulationResult.deltaCash))} versus baseline.`
-            : `Ending cash expands by ${formatINR(simulationResult.deltaCash)}.`
-        } ${simulationResult.isReserveBreached ? '⚠️ Note: Liquidity dips below the ₹20.0 L safe reserve.' : 'Safe liquidity reserve is maintained throughout the forecast.'}`,
-        resultSnapshot: {
-          endingCash: simulationResult.endingCash,
-          deltaCash: simulationResult.deltaCash,
-          lowestCash: simulationResult.lowestCash,
-          isReserveBreached: simulationResult.isReserveBreached
-        },
-        followUpSuggestions: [
-          'What if we reduce operating expenses by 5%?',
-          'What if collection delay increases to 30 days?',
-          'Compare with baseline'
-        ]
-      };
-      setMessages(prev => [...prev, resultMsg]);
-      showToast('Scenario simulated successfully', 'success');
-    }, 300);
+    // Compose rich, dynamic, scenario-tailored analysis message
+    const isDeficit = freshResult.deltaCash < 0;
+    const isSurplus = freshResult.deltaCash > 0;
+    const horizon = activeParams.horizonDays || 60;
+
+    // Build specific active levers description
+    const leverDescriptions: string[] = [];
+    if (activeParams.revenueChangePct !== 0) {
+      leverDescriptions.push(`${activeParams.revenueChangePct > 0 ? '+' : ''}${activeParams.revenueChangePct}% Revenue`);
+    }
+    if (activeParams.collectionDelayDays > 0) {
+      leverDescriptions.push(`${activeParams.collectionDelayDays}d Collection Delay`);
+    }
+    if (activeParams.expenseChangePct !== 0) {
+      leverDescriptions.push(`${activeParams.expenseChangePct > 0 ? '+' : ''}${activeParams.expenseChangePct}% Opex`);
+    }
+    if (activeParams.capexHiringCost > 0) {
+      leverDescriptions.push(`${formatINRCompact(activeParams.capexHiringCost)} Capex/Hiring`);
+    }
+    if (activeParams.paymentRescheduleDays > 0) {
+      leverDescriptions.push(`${activeParams.paymentRescheduleDays}d Vendor Reschedule`);
+    }
+
+    const scenarioTitle = leverDescriptions.length > 0 
+      ? leverDescriptions.join(', ') 
+      : activeParams.name || 'Custom Scenario';
+
+    let summaryText = `### Simulation Executed: ${scenarioTitle}\n\n`;
+
+    if (isDeficit) {
+      summaryText += `• **Liquidity Impact**: Projected ending cash contracts by **${formatINR(Math.abs(freshResult.deltaCash))}** versus baseline (ending at **${formatINR(freshResult.endingCash)}** over ${horizon} days).\n`;
+    } else if (isSurplus) {
+      summaryText += `• **Liquidity Expansion**: Projected ending cash expands by **${formatINR(freshResult.deltaCash)}** above baseline (reaching **${formatINR(freshResult.endingCash)}** over ${horizon} days).\n`;
+    } else {
+      summaryText += `• **Neutral Trajectory**: Cash flow matches baseline plan at **${formatINR(freshResult.endingCash)}** over ${horizon} days.\n`;
+    }
+
+    // Trough & reserve evaluation
+    if (freshResult.isNegativeCashBreached) {
+      summaryText += `• **CRITICAL DEFICIT**: Cash balance enters negative territory, bottoming at **${formatINR(freshResult.lowestCash)}** on ${freshResult.shortfallDate ? formatDate(freshResult.shortfallDate) : 'mid-horizon'}. Emergency credit facility or payment holds required.\n`;
+    } else if (freshResult.isReserveBreached) {
+      summaryText += `• **RESERVE BREACH**: Liquidity dips below the ₹20.0 L safe reserve around **${freshResult.shortfallDate ? formatDate(freshResult.shortfallDate) : 'Day 25'}**, reaching a minimum trough of **${formatINR(freshResult.lowestCash)}**.\n`;
+    } else {
+      summaryText += `• **SAFE RESERVE SECURED**: Liquidity maintains a healthy cushion above the ₹20.0 L buffer throughout all ${horizon} days, bottoming at **${formatINR(freshResult.lowestCash)}**.\n`;
+    }
+
+    // Key drivers from calculation engine
+    if (freshResult.keyDrivers && freshResult.keyDrivers.length > 0) {
+      summaryText += `\n**Key Financial Drivers:**\n`;
+      freshResult.keyDrivers.forEach(kd => {
+        summaryText += `• **${kd.label}**: ${kd.description} (${kd.impact >= 0 ? '+' : ''}${formatINRCompact(kd.impact)})\n`;
+      });
+    }
+
+    // Tailored follow-up suggestions based on scenario results
+    const followUps: string[] = [];
+    if (freshResult.isReserveBreached || isDeficit) {
+      followUps.push('What if we cut operating expenses by 8% to offset this?');
+      followUps.push('What if we delay vendor payments by 20 days?');
+      followUps.push('What if revenue drops by only 5%?');
+    } else {
+      followUps.push('What if receivables arrive 20 days late?');
+      followUps.push('What if we invest ₹25 lakh in growth capex?');
+      followUps.push('What if operating expenses rise by 10%?');
+    }
+    followUps.push('Compare with baseline');
+
+    const resultMsg: ScenarioChatMessage = {
+      id: `ast-run-${Date.now()}`,
+      sender: 'assistant',
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      text: summaryText,
+      resultSnapshot: {
+        endingCash: freshResult.endingCash,
+        deltaCash: freshResult.deltaCash,
+        lowestCash: freshResult.lowestCash,
+        isReserveBreached: freshResult.isReserveBreached
+      },
+      followUpSuggestions: followUps
+    };
+
+    setMessages(prev => [...prev, resultMsg]);
+    showToast('Scenario simulated successfully', 'success');
   };
 
   // Start fresh scenario conversation
