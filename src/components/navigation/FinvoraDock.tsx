@@ -15,8 +15,8 @@ import {
   ChevronDown
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MagneticDock, type DockItemData } from '@/components/ui/magnetic-dock';
-import { useFinancial } from '@/context/FinancialContext';
+import { MagneticDock, type DockItemData } from '../ui/magnetic-dock';
+import { useFinancial } from '../../context/FinancialContext';
 
 interface FinvoraDockProps {
   className?: string;

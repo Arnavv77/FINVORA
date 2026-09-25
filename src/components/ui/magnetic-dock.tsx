@@ -1,6 +1,6 @@
 import * as React from "react"
 import { motion, useMotionValue, useSpring, useTransform, AnimatePresence, useReducedMotion, type MotionValue } from "framer-motion"
-import { cn } from "@/lib/utils"
+import { cn } from "../../lib/utils"
 
 export interface MagneticDockProps {
     /** Array of dock items */

@@ -113,6 +113,7 @@ interface FinancialContextType {
   setCopilotOpen: (open: boolean) => void;
   copilotMessages: CopilotMessage[];
   sendCopilotMessage: (text: string) => void;
+  clearCopilotMessages: () => void;
 
   // Toasts & Demo Reset
   toasts: Toast[];
@@ -266,17 +267,15 @@ export const FinancialProvider: React.FC<{ children: ReactNode }> = ({ children 
     {
       id: 'msg-init',
       sender: 'finvora',
-      timestamp: '10:00 AM',
-      text: 'Good morning, Finance Team. I am **FINVORA**, your autonomous Finance Copilot & Predictive Engine.\n\nI have identified **1 critical duplicate invoice** (#INV-2024-8849 for ₹6,80,000) and **Marketing budget variance (+18%)**. How can I assist you with financial decisions today?',
+      timestamp: 'Today',
+      text: 'Good morning. Live ledger telemetry evaluated.\n\n• **Duplicate Invoice Flagged**: #INV-2024-8849 (₹6,80,000) pending payment hold\n• **Budget Variance**: Marketing & Growth is +18% over threshold\n\nHow can I assist your financial decisions today?',
       citations: [
-        { type: 'risk', title: 'Duplicate Invoice ANOM-2024-001', referenceId: 'ANOM-2024-001' },
-        { type: 'invoice', title: 'Invoice #INV-2024-8849', referenceId: 'INV-2024-8849' },
-        { type: 'department', title: 'Marketing Budget Overrun', referenceId: 'dept-mktg' }
+        { type: 'risk', title: 'Duplicate INV-2024-8849', referenceId: 'ANOM-2024-001' },
+        { type: 'department', title: 'Marketing Overrun', referenceId: 'dept-mktg' }
       ],
       suggestedActions: [
         { label: 'Inspect Duplicate Invoice #8849', actionType: 'navigate', payload: '/risk-anomalies' },
-        { label: 'Why is cash balance declining?', actionType: 'filter', payload: 'cash_decline' },
-        { label: 'Simulate 15-day Collection Delay', actionType: 'navigate', payload: '/what-if' }
+        { label: 'Review Budget Variance', actionType: 'navigate', payload: '/budget-intelligence' }
       ]
     }
   ]);
@@ -686,30 +685,30 @@ export const FinancialProvider: React.FC<{ children: ReactNode }> = ({ children 
 
       const lower = text.toLowerCase();
 
-      if (lower.includes('cash balance') || lower.includes('fall') || lower.includes('decline') || lower.includes('shortfall')) {
-        replyText = `### Cash Balance Driver Analysis\n\nProjected cash dips near Day 48 due to three compounding cash events:\n1. **High AP Outflow Clustering**: ₹38.5 L Server PO (HyperScale Systems) + ₹18.5 L Performance Marketing ad spends.\n2. **Duplicate Invoice Drain**: Duplicate invoice #INV-2024-8849 (₹6,80,000) scheduled for release on 28 Sep.\n3. **Receivables Lag**: ₹75.0 L in enterprise client receivables aged 30+ days.\n\n**Recommendation**: Executing a payment hold on #INV-2024-8849 saves ₹6,80,000 immediately and maintains cash reserves safely above ₹25 L.`;
+      if (lower.includes('cash') || lower.includes('balance') || lower.includes('fall') || lower.includes('decline') || lower.includes('shortfall')) {
+        replyText = `### Cash Balance Drivers\nProjected liquidity dips near Day 48 due to:\n• **AP Outflows**: ₹38.5L Server PO + ₹18.5L Marketing ad spend\n• **Duplicate Invoice**: ₹6.80L candidate (#INV-2024-8849)\n• **Aged Receivables**: ₹75.0L enterprise AR aged 30+ days\n\n**Recommendation**: Holding duplicate #INV-2024-8849 preserves ₹6.80L and maintains reserves above ₹25L.`;
         citations = [
           { type: 'invoice', title: 'Duplicate INV-2024-8849', referenceId: 'INV-2024-8849' },
           { type: 'risk', title: 'Cash Shortage Risk', referenceId: 'ANOM-2024-001' }
         ];
         suggestedActions = [
-          { label: 'View Duplicate Anomaly Evidence', actionType: 'navigate', payload: '/risk-anomalies' },
-          { label: 'Review Payment Hold Proposal', actionType: 'navigate', payload: '/decisions-approvals' }
+          { label: 'View Duplicate Anomaly', actionType: 'navigate', payload: '/risk-anomalies' },
+          { label: 'Review Hold Proposal', actionType: 'navigate', payload: '/decisions-approvals' }
         ];
       } else if (lower.includes('invoice') || lower.includes('review') || lower.includes('duplicate')) {
-        replyText = `### Invoices Requiring Urgent Review\n\nThere are **2 invoices** requiring senior finance sign-off:\n\n1. **#INV-2024-8849** from **Zenith Cloud Services** (₹6,80,000) — *Critical duplicate candidate*. Exact match with settled #INV-2024-8841.\n2. **#INV-2024-8902** from **HyperScale Systems** (₹38,50,000) — *9.1x outlier against historical spend*. Dual sign-off required.\n3. **#INV-2024-8660** from **Shardul Amarchand** (₹7,50,000) — *Overdue by 4 days*.`;
+        replyText = `### Invoices Requiring Review\n• **#INV-2024-8849** (Zenith Cloud): **₹6,80,000** — Critical duplicate candidate of settled #INV-8841.\n• **#INV-2024-8902** (HyperScale Systems): **₹38,50,000** — 9.1x historical spike; needs dual approval.\n• **#INV-2024-8660** (Shardul Amarchand): **₹7,50,000** — Overdue by 4 days.`;
         citations = [
           { type: 'invoice', title: 'INV-2024-8849 (Duplicate)', referenceId: 'INV-2024-8849' },
           { type: 'invoice', title: 'INV-2024-8902 (Outlier PO)', referenceId: 'INV-2024-8902' }
         ];
         suggestedActions = [
-          { label: 'Go to AP & Invoices', actionType: 'navigate', payload: '/ap-expenses' },
-          { label: 'Open Duplicate Evidence', actionType: 'navigate', payload: '/risk-anomalies' }
+          { label: 'Open Invoices Ledger', actionType: 'navigate', payload: '/ap-expenses' },
+          { label: 'Inspect Evidence', actionType: 'navigate', payload: '/risk-anomalies' }
         ];
       } else if (lower.includes('marketing') || lower.includes('budget') || lower.includes('over budget')) {
-        replyText = `### Marketing Budget Overrun Diagnosis\n\nMarketing & Growth spend is **₹48,60,000** against an allocated budget of **₹45,00,000** (**+18.0% unfavorable variance**).\n\n**Root Cause**: Unplanned festive paid acquisition push on Google Performance Max & Meta ads.\n\n**Remedy Available**: Engineering has a projected month-end surplus of ₹10,00,000. FINVORA has drafted an automated inter-department reallocation of ₹4,50,000 to balance the ledger.`;
+        replyText = `### Marketing Budget Variance\n• **Status**: ₹48.60L spent vs ₹45.00L allocated (**+18.0% variance**)\n• **Cause**: Unplanned festive paid acquisition push on Meta & Google Ads\n• **Remedy**: Auto-reallocation of ₹4.50L from Engineering's ₹10.0L surplus is drafted.`;
         citations = [
-          { type: 'department', title: 'Marketing & Growth Budget', referenceId: 'dept-mktg' },
+          { type: 'department', title: 'Marketing Budget', referenceId: 'dept-mktg' },
           { type: 'risk', title: 'Budget Deviation ANOM-2024-003', referenceId: 'ANOM-2024-003' }
         ];
         suggestedActions = [
@@ -717,16 +716,15 @@ export const FinancialProvider: React.FC<{ children: ReactNode }> = ({ children 
           { label: 'View Pending Proposal', actionType: 'navigate', payload: '/decisions-approvals' }
         ];
       } else if (lower.includes('15 days') || lower.includes('delay') || lower.includes('late')) {
-        replyText = `### Simulation: 15-Day Collection Delay Impact\n\nIf customer receivables are delayed by 15 days:\n- Operating cash drops by **₹22.4 Lakhs** during Days 20–35.\n- Lowest cash balance reaches **₹1.18 Cr**.\n- No insolvency occurs, but short-term liquidity buffer dips to 6.2 days of runway.\n\n**Action**: Reschedule non-critical vendor disbursements or run What-If stress test.`;
+        replyText = `### 15-Day Delay Stress Test\n• **Cash Impact**: -₹22.4L during Days 20–35\n• **Minimum Reserve**: ₹1.18 Cr (runway buffer drops to 6.2 days)\n• **Assessment**: No insolvency; hold non-critical vendor disbursements to maintain cushion.`;
         suggestedActions = [
-          { label: 'Run Scenario in What-If Simulator', actionType: 'navigate', payload: '/what-if' }
+          { label: 'Open What-If Simulator', actionType: 'navigate', payload: '/what-if' }
         ];
       } else {
-        replyText = `FINVORA Demo Copilot is connected to your live financial ledger. In this demo workspace, I can analyze:\n- Duplicate invoices and payment holds\n- Cash-flow shortfall drivers and 30/60/90-day forecasts\n- Departmental budget overruns (e.g. Marketing)\n- Working capital delays and What-If scenario simulations.\n\nPlease ask about any of these topics or choose a suggested prompt below.`;
+        replyText = `### Ledger Telemetry\nI can analyze your live enterprise ledger:\n• **Duplicate Invoices & Payment Holds**\n• **Cash Flow & Liquidity Forecasts**\n• **Department Budget Variances**\n• **What-If Scenario Simulations**`;
         suggestedActions = [
           { label: 'Why is cash balance declining?', actionType: 'filter', payload: 'cash_decline' },
-          { label: 'Which invoices need review?', actionType: 'filter', payload: 'invoices_review' },
-          { label: 'Why is marketing over budget?', actionType: 'filter', payload: 'marketing_budget' }
+          { label: 'Which invoices need review?', actionType: 'filter', payload: 'invoices_review' }
         ];
       }
 
@@ -740,7 +738,12 @@ export const FinancialProvider: React.FC<{ children: ReactNode }> = ({ children 
       };
 
       setCopilotMessages(prev => [...prev, botMsg]);
-    }, 650);
+    }, 500);
+  };
+
+  const clearCopilotMessages = () => {
+    setCopilotMessages([]);
+    showToast('Conversation cleared', 'info');
   };
 
   const resetDemoData = () => {
@@ -821,6 +824,7 @@ export const FinancialProvider: React.FC<{ children: ReactNode }> = ({ children 
         setCopilotOpen,
         copilotMessages,
         sendCopilotMessage,
+        clearCopilotMessages,
         toasts,
         showToast,
         resetDemoData,
