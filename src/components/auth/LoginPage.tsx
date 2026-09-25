@@ -71,13 +71,13 @@ export const LoginPage: React.FC = () => {
         {/* ── LEFT: Hero Value Proposition & Telemetry ── */}
         <div className="w-full lg:max-w-[480px] xl:max-w-[520px] flex flex-col space-y-6 text-left">
 
-          {/* Main Headline with generous word and line spacing */}
+          {/* Main Headline with generous word, letter, and line spacing */}
           <h1
-            className="text-3xl sm:text-4xl lg:text-[48px] font-bold text-white leading-[1.32] drop-shadow-[0_4px_16px_rgba(0,0,0,0.6)]"
-            style={{ wordSpacing: '0.14em', letterSpacing: '0.02em' }}
+            className="text-3xl sm:text-4xl lg:text-[46px] font-bold text-white leading-normal drop-shadow-[0_4px_16px_rgba(0,0,0,0.6)] flex flex-col gap-3 sm:gap-4"
+            style={{ wordSpacing: '0.24em', letterSpacing: '0.035em' }}
           >
-            Turn Financial Data <br className="hidden sm:inline" />
-            Into Foresight.
+            <span>Turn Financial Data</span>
+            <span>Into Foresight.</span>
           </h1>
 
           {/* Subtitle Description */}
