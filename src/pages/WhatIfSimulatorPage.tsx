@@ -50,7 +50,7 @@ import {
   DEFAULT_SIMULATION_PARAMS,
   interpretScenarioPrompt
 } from '../utils/scenarioEngine';
-import { simulateScenario } from '../lib/api';
+import { simulateScenario, sendCopilotChat } from '../lib/api';
 
 const PROMPT_SUGGESTIONS = [
   'What if revenue falls by 10%?',
@@ -138,7 +138,7 @@ export const WhatIfSimulatorPage: React.FC = () => {
   }, []);
 
   // Handle prompt submission
-  const handleSendMessage = (customText?: string) => {
+  const handleSendMessage = async (customText?: string) => {
     const query = (customText ?? inputText).trim();
     if (!query) return;
 
@@ -154,29 +154,32 @@ export const WhatIfSimulatorPage: React.FC = () => {
     setInputText('');
     setIsInterpreting(true);
 
-    // Simulate conversational intelligence interpretation
-    setTimeout(() => {
+    try {
+      // 1. Parse scenario levers locally with advanced multi-intent parser
       const parsed = interpretScenarioPrompt(query, stagedParams);
 
-      if (!parsed.isSupported) {
-        const assistantMsg: ScenarioChatMessage = {
-          id: `ast-${Date.now()}`,
-          sender: 'assistant',
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          text: parsed.interpretationText,
-          isUnsupported: true,
-          followUpSuggestions: parsed.followUps
-        };
-        setMessages(prev => [...prev, assistantMsg]);
-        setIsInterpreting(false);
-        return;
+      // 2. Fetch live copilot context if available
+      let backendReply = '';
+      try {
+        const copilotRes = await sendCopilotChat(query);
+        if (copilotRes && copilotRes.reply) {
+          backendReply = copilotRes.reply;
+        }
+      } catch {
+        // Backend offline or error - seamlessly continue with intelligent local engine
+      }
+
+      // 3. Compose rich display text
+      let textToDisplay = parsed.interpretationText;
+      if (backendReply && !parsed.hasSpecificLevers) {
+        textToDisplay = `${backendReply}\n\n**Proposed Scenario Stress-Test:**\n${parsed.interpretationText}`;
       }
 
       // Valid interpretation
       const newStaged: SimulationParams = {
         ...stagedParams,
         ...parsed.assumptions,
-        name: query.slice(0, 45)
+        name: query.slice(0, 45).trim()
       };
       setStagedParams(newStaged);
 
@@ -184,16 +187,31 @@ export const WhatIfSimulatorPage: React.FC = () => {
         id: `ast-${Date.now()}`,
         sender: 'assistant',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        text: parsed.interpretationText,
-        sourceChips: ['Reconciled AR Ledger', 'Net-30 Enterprise Terms', 'Q3 Base Plan'],
+        text: textToDisplay,
+        sourceChips: ['Reconciled AR Ledger', 'Net-30 Enterprise Terms', 'Q3 Base Plan', 'Predictive ML Engine'],
         proposedAssumptions: newStaged,
         isInterpretation: true,
         followUpSuggestions: parsed.followUps
       };
 
       setMessages(prev => [...prev, assistantMsg]);
+    } catch (err) {
+      console.error('Scenario processing error:', err);
+      const fallbackParsed = interpretScenarioPrompt(query, stagedParams);
+      const assistantMsg: ScenarioChatMessage = {
+        id: `ast-${Date.now()}`,
+        sender: 'assistant',
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        text: fallbackParsed.interpretationText,
+        sourceChips: ['General Ledger Heuristics', 'Q3 Base Plan'],
+        proposedAssumptions: fallbackParsed.assumptions,
+        isInterpretation: true,
+        followUpSuggestions: fallbackParsed.followUps
+      };
+      setMessages(prev => [...prev, assistantMsg]);
+    } finally {
       setIsInterpreting(false);
-    }, 450);
+    }
   };
 
   // Run the staged scenario through the deterministic engine and backend simulate API

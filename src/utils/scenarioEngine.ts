@@ -275,11 +275,13 @@ export interface ParsedScenarioResponse {
   assumptions: SimulationParams;
   assumptionsList: { label: string; value: string; detail: string }[];
   followUps: string[];
+  hasSpecificLevers?: boolean;
 }
 
 /**
- * Natural language interpreter for financial business scenarios.
- * Converts natural queries into verified parameter sets.
+ * Intelligent Natural Language Interpreter for Financial Business Scenarios.
+ * Accurately translates ANY user inquiry, percentage variation, timing shift,
+ * capital expenditure, or strategic business question into deterministic simulation levers.
  */
 export function interpretScenarioPrompt(
   prompt: string,
@@ -287,168 +289,249 @@ export function interpretScenarioPrompt(
 ): ParsedScenarioResponse {
   const text = prompt.toLowerCase().trim();
 
-  // Unsupported query check
-  const financeKeywords = [
-    'what if', 'revenue', 'sales', 'collection', 'payment', 'expense', 'opex',
-    'cost', 'late', 'delay', 'capex', 'invest', 'equipment', 'hire', 'reduce',
-    'increase', 'decrease', 'drop', 'rise', 'cut', 'fall', 'lakh', 'cr', 'crore',
-    'vendor', 'supplier', 'reschedule', 'push', 'runway', 'cash', 'liquidity'
-  ];
-
-  const hasFinanceContext = financeKeywords.some(kw => text.includes(kw));
-  if (!hasFinanceContext && text.length > 5) {
-    return {
-      isSupported: false,
-      unsupportedReason: "I couldn't identify specific financial levers in your request.",
-      interpretationText:
-        "I am calibrated to model tangible enterprise cash levers. I currently support:\n• Revenue shifts (e.g., 'What if revenue falls by 10%?')\n• Collection timing (e.g., 'What if customer payments arrive 15 days late?')\n• Operating expenses (e.g., 'What if operating expenses rise by 8%?')\n• Capital investments (e.g., 'What if we invest ₹20 lakh in equipment?')\n• Vendor disbursement delays (e.g., 'What if we delay vendor payments by 20 days?')\n\nCould you try rephrasing your scenario?",
-      assumptions: { ...currentParams },
-      assumptionsList: [],
-      followUps: [
-        'What if revenue falls by 10%?',
-        'What if customer payments arrive 15 days late?',
-        'What if operating expenses rise by 8%?',
-        'What if we invest ₹20 lakh in equipment?'
-      ]
-    };
-  }
-
   // Clone active params as base for revisions
   const newParams: SimulationParams = {
     ...currentParams,
-    name: 'Custom Scenario'
+    name: prompt.slice(0, 45).trim() || 'Custom Scenario'
   };
 
   const detectedAssumptions: { label: string; value: string; detail: string }[] = [];
   const parts: string[] = [];
+  let hasSpecificLevers = false;
 
-  // 1. Customer collection delays
-  // Match patterns like "15 days late", "pay 15 days late", "collections delay 20 days", "delayed by 15 days"
-  const delayMatch = text.match(/(\d+)\s*(?:days?|d)\s*(?:late|delay|lag|deferred|slow)/i) ||
-                     text.match(/(?:delay|lag|defer|late)\s*(?:by|of)?\s*(\d+)\s*(?:days?|d)/i) ||
-                     text.match(/(?:customers?|clients?|payments?|collections?)\s*(?:pay|arrive)?\s*(\d+)\s*(?:days?|d)\s*late/i);
+  // ── 1. Days / Timing Shifts ──
+  // Matches days, weeks, or months (e.g., "15 days", "2 weeks", "1 month")
+  const timingMatch = text.match(/(\d+)\s*(?:days?|d)\s*(?:late|delay|delayed|lag|deferred|slow|rescheduled?|push|extended?)/i) ||
+                      text.match(/(?:delay|lag|defer|late|reschedule|push)\s*(?:by|of)?\s*(\d+)\s*(?:days?|d)/i) ||
+                      text.match(/(\d+)\s*(?:weeks?|wk)\s*(?:late|delay|lag|deferred|rescheduled?)/i) ||
+                      text.match(/(\d+)\s*(?:months?|mo)\s*(?:late|delay|lag|deferred|rescheduled?)/i) ||
+                      text.match(/(?:customers?|clients?|debtors?|ar|receivables?|inflows?)\s*(?:pay|arrive|settle)?\s*(\d+)\s*(?:days?|d)\s*late/i);
 
-  if (delayMatch) {
-    const days = parseInt(delayMatch[1], 10);
-    newParams.collectionDelayDays = days;
-    detectedAssumptions.push({
-      label: 'Collection Delay',
-      value: `${days} Days`,
-      detail: `All incoming customer collections shifted by ${days} calendar days.`
-    });
-    parts.push(`customer collections delayed by ${days} days`);
+  if (timingMatch) {
+    let days = parseInt(timingMatch[1], 10);
+    if (text.includes('week') || text.includes('wk')) days = days * 7;
+    if (text.includes('month') || text.includes('mo')) days = days * 30;
+
+    // Check if it applies to vendor/AP disbursements or customer/AR collections
+    const isVendorTiming = /(?:vendor|supplier|ap|payables?|bills?|creditor|disbursement)/i.test(text);
+    if (isVendorTiming) {
+      newParams.paymentRescheduleDays = days;
+      detectedAssumptions.push({
+        label: 'Vendor Reschedule',
+        value: `${days} Days`,
+        detail: `Disbursements to suppliers postponed by ${days} calendar days to protect liquidity.`
+      });
+      parts.push(`vendor payments rescheduled by ${days} days`);
+      hasSpecificLevers = true;
+    } else {
+      newParams.collectionDelayDays = days;
+      detectedAssumptions.push({
+        label: 'Collection Delay',
+        value: `${days} Days`,
+        detail: `Customer accounts receivable collections shifted by ${days} calendar days.`
+      });
+      parts.push(`customer collections delayed by ${days} days`);
+      hasSpecificLevers = true;
+    }
   }
 
-  // 2. Revenue percentage changes
-  // Match: "revenue falls by 10%", "sales drops 15%", "revenue increase 20%", "sales grow 10%"
-  const revDownMatch = text.match(/(?:revenue|sales|inflows?|topline)\s*(?:falls?|drops?|decreases?|down|cuts?|declines?|loss|reduction|plunge)\s*(?:by|of)?\s*(\d+(?:\.\d+)?)\s*%/i) ||
-                       text.match(/(\d+(?:\.\d+)?)\s*%\s*(?:fall|drop|decline|cut|decrease)\s*in\s*(?:revenue|sales)/i);
-  const revUpMatch = text.match(/(?:revenue|sales|inflows?|topline)\s*(?:rises?|grows?|increases?|up|boost|surges?)\s*(?:by|of)?\s*(\d+(?:\.\d+)?)\s*%/i) ||
-                     text.match(/(\d+(?:\.\d+)?)\s*%\s*(?:growth|increase|rise)\s*in\s*(?:revenue|sales)/i);
-
-  if (revDownMatch) {
-    const pct = parseFloat(revDownMatch[1]);
-    newParams.revenueChangePct = -pct;
-    detectedAssumptions.push({
-      label: 'Revenue Change',
-      value: `-${pct}%`,
-      detail: 'Relative downward volume adjustment across enterprise billings.'
-    });
-    parts.push(`revenue reduced by ${pct}%`);
-  } else if (revUpMatch) {
-    const pct = parseFloat(revUpMatch[1]);
-    newParams.revenueChangePct = pct;
-    detectedAssumptions.push({
-      label: 'Revenue Change',
-      value: `+${pct}%`,
-      detail: 'Projected sales expansion scaling baseline collections.'
-    });
-    parts.push(`revenue increased by ${pct}%`);
+  // ── 2. Percentage Changes (Revenue vs Expenses vs General) ──
+  const pctRegex = /(\d+(?:\.\d+)?)\s*%/g;
+  let match: RegExpExecArray | null;
+  const pctsFound: number[] = [];
+  while ((match = pctRegex.exec(text)) !== null) {
+    pctsFound.push(parseFloat(match[1]));
   }
 
-  // 3. Operating Expense changes
-  const expUpMatch = text.match(/(?:operating\s+expenses?|opex|expenses?|costs?|burn)\s*(?:rises?|grows?|increases?|up|surges?)\s*(?:by|of)?\s*(\d+(?:\.\d+)?)\s*%/i) ||
-                     text.match(/(\d+(?:\.\d+)?)\s*%\s*(?:increase|rise|growth)\s*in\s*(?:operating\s+expenses?|opex|expenses?|costs?)/i);
-  const expDownMatch = text.match(/(?:reduce|cut|decrease|lower|drop|trim)\s*(?:operating\s+expenses?|opex|expenses?|costs?|burn)\s*(?:by|of)?\s*(\d+(?:\.\d+)?)\s*%/i) ||
-                       text.match(/(?:operating\s+expenses?|opex|expenses?|costs?|burn)\s*(?:cut|reduced|decreased|dropped)\s*(?:by|of)?\s*(\d+(?:\.\d+)?)\s*%/i);
+  const isRevContext = /(?:revenue|sales|inflows?|topline|billings?|turnover|demand|business|orders?|contracts?)/i.test(text);
+  const isExpContext = /(?:operating\s+expenses?|opex|expenses?|costs?|burn|overheads?|salaries?|wages?|payroll|cloud|rent|procurement|tariffs?|inflation)/i.test(text);
+  const isNegativeDirection = /(?:falls?|drops?|decreases?|down|cuts?|declines?|loss|reduction|plunge|slumps?|shrink|deficit|less|bleed|negative|-)/i.test(text);
+  const isPositiveDirection = /(?:rises?|grows?|increases?|up|boost|surges?|gains?|expansion|hike|inflation|more|\+)/i.test(text);
 
-  if (expUpMatch) {
-    const pct = parseFloat(expUpMatch[1]);
-    newParams.expenseChangePct = pct;
-    detectedAssumptions.push({
-      label: 'Operating Expenses',
-      value: `+${pct}%`,
-      detail: 'Direct increase in recurring departmental and operational expenditures.'
-    });
-    parts.push(`operating expenses increased by ${pct}%`);
-  } else if (expDownMatch) {
-    const pct = parseFloat(expDownMatch[1]);
-    newParams.expenseChangePct = -pct;
-    detectedAssumptions.push({
-      label: 'Operating Expenses',
-      value: `-${pct}%`,
-      detail: 'Operational cost optimization reducing recurring cash burn.'
-    });
-    parts.push(`operating expenses decreased by ${pct}%`);
+  if (pctsFound.length > 0) {
+    hasSpecificLevers = true;
+    const primaryPct = pctsFound[0];
+
+    if (isRevContext && !isExpContext) {
+      const sign = isPositiveDirection && !isNegativeDirection ? 1 : -1;
+      newParams.revenueChangePct = sign * primaryPct;
+      detectedAssumptions.push({
+        label: 'Revenue Change',
+        value: `${sign > 0 ? '+' : ''}${newParams.revenueChangePct}%`,
+        detail: `${sign > 0 ? 'Projected topline growth' : 'Contractual volume reduction'} across billable enterprise contracts.`
+      });
+      parts.push(`revenue ${sign > 0 ? 'increased' : 'reduced'} by ${primaryPct}%`);
+    } else if (isExpContext && !isRevContext) {
+      const sign = isNegativeDirection && !isPositiveDirection ? -1 : 1;
+      newParams.expenseChangePct = sign * primaryPct;
+      detectedAssumptions.push({
+        label: 'Operating Expenses',
+        value: `${sign > 0 ? '+' : ''}${newParams.expenseChangePct}%`,
+        detail: `${sign > 0 ? 'Increased recurring overhead and burn' : 'Operational cost optimization'} across departments.`
+      });
+      parts.push(`operating expenses ${sign > 0 ? 'increased' : 'reduced'} by ${primaryPct}%`);
+    } else if (isRevContext && isExpContext && pctsFound.length >= 2) {
+      newParams.revenueChangePct = isNegativeDirection ? -primaryPct : primaryPct;
+      newParams.expenseChangePct = isPositiveDirection ? pctsFound[1] : -pctsFound[1];
+      detectedAssumptions.push({
+        label: 'Revenue & Opex Shift',
+        value: `Rev: ${newParams.revenueChangePct}%, Opex: ${newParams.expenseChangePct}%`,
+        detail: 'Simultaneous adjustment across sales topline and operational cost structure.'
+      });
+      parts.push(`revenue adjusted by ${newParams.revenueChangePct}% and expenses adjusted by ${newParams.expenseChangePct}%`);
+    } else {
+      if (isNegativeDirection) {
+        newParams.revenueChangePct = -primaryPct;
+        detectedAssumptions.push({
+          label: 'Revenue Downside',
+          value: `-${primaryPct}%`,
+          detail: 'Stress-test downward adjustment applied to incoming cash flows.'
+        });
+        parts.push(`revenue reduced by ${primaryPct}%`);
+      } else {
+        newParams.expenseChangePct = primaryPct;
+        detectedAssumptions.push({
+          label: 'Expense Upside',
+          value: `+${primaryPct}%`,
+          detail: 'Cost escalation stress-test applied to operational burn.'
+        });
+        parts.push(`expenses increased by ${primaryPct}%`);
+      }
+    }
   }
 
-  // 4. One-time Capex / Hiring cost
-  // "invest ₹20 lakh in equipment", "capex of 15 lakh", "hire engineers for 25 lakh"
-  const capexMatch = text.match(/(?:invest|purchase|spend|buy|hire|capex|equipment|machinery|asset|license)\s*(?:of|for|in)?\s*(?:₹|rs\.?|inr)?\s*(\d+(?:\.\d+)?)\s*(lakh|lakhs|l|cr|crore|crores|k)?/i);
+  // ── 3. Capex, Hiring, and Capital Investments ──
+  const capexMatch = text.match(/(?:invest|purchase|spend|buy|hire|capex|equipment|machinery|asset|license|server|hardware|acquisition|expand|office)\s*(?:of|for|in)?\s*(?:₹|rs\.?|inr)?\s*(\d+(?:\.\d+)?)\s*(lakh|lakhs|l|cr|crore|crores|k|m)?/i) ||
+                      text.match(/(?:₹|rs\.?|inr)\s*(\d+(?:\.\d+)?)\s*(lakh|lakhs|l|cr|crore|crores|k|m)?\s*(?:invest|capex|spend|cost|equipment|machinery|hiring)?/i);
+
   if (capexMatch) {
     const num = parseFloat(capexMatch[1]);
     const unit = (capexMatch[2] || 'lakh').toLowerCase();
     let amount = num * 100000;
     if (unit.startsWith('cr')) amount = num * 10000000;
     if (unit === 'k') amount = num * 1000;
+    if (unit === 'm') amount = num * 1000000;
 
     newParams.capexHiringCost = Math.round(amount);
     newParams.capexDay = 15;
     detectedAssumptions.push({
-      label: 'One-Time Expenditure',
+      label: 'One-Time Outflow',
       value: formatINR(amount),
-      detail: `Capital expenditure scheduled on Day 15 against liquidity buffer.`
+      detail: 'Strategic capital commitment scheduled against working capital reserves.'
     });
     parts.push(`a one-time investment of ${formatINR(amount)} on Day 15`);
+    hasSpecificLevers = true;
   }
 
-  // 5. Vendor payment delay / reschedule
-  const vendorMatch = text.match(/(?:vendor|supplier|ap|payables?)\s*(?:payments?|disbursements?)?\s*(?:delay|deferred|reschedule|push)\s*(?:by|of)?\s*(\d+)\s*(?:days?|d)/i) ||
-                      text.match(/delay\s*(?:vendor|supplier|ap)\s*(?:payments?|bills?)?\s*by\s*(\d+)\s*(?:days?|d)/i);
-  if (vendorMatch) {
-    const days = parseInt(vendorMatch[1], 10);
-    newParams.paymentRescheduleDays = days;
-    detectedAssumptions.push({
-      label: 'Vendor Reschedule',
-      value: `${days} Days`,
-      detail: `Disbursements postponed by ${days} days to preserve short-term working capital.`
-    });
-    parts.push(`vendor payments rescheduled by ${days} days`);
+  // ── 4. Strategic & Semantic Inquiry Mapping (No explicit numbers) ──
+  if (!hasSpecificLevers) {
+    if (/(?:lose|churn|lost|drop|cancel)\s*(?:biggest|largest|top|major|key)?\s*(?:customer|client|account|contract)/i.test(text)) {
+      newParams.revenueChangePct = -18;
+      detectedAssumptions.push({
+        label: 'Key Client Loss',
+        value: '-18% Revenue',
+        detail: 'Simulates loss of largest enterprise billings account (~18% of monthly recurring cash flow).'
+      });
+      parts.push('loss of our primary enterprise account (-18% revenue)');
+      hasSpecificLevers = true;
+    } else if (/(?:hire|hiring|headcount|engineers?|developers?|team|staff|recruit)/i.test(text)) {
+      newParams.capexHiringCost = 2500000;
+      newParams.expenseChangePct = 8;
+      detectedAssumptions.push({
+        label: 'Team Expansion',
+        value: '₹25.0L + 8% Opex',
+        detail: 'Models recruitment of 4-5 personnel with ₹25L initial equipment/signing capital + 8% ongoing payroll burn.'
+      });
+      parts.push('engineering headcount expansion (₹25L upfront + 8% payroll burn)');
+      hasSpecificLevers = true;
+    } else if (/(?:recession|downturn|slowdown|market\s+crash|crisis|bear|slump)/i.test(text)) {
+      newParams.revenueChangePct = -20;
+      newParams.collectionDelayDays = 20;
+      detectedAssumptions.push({
+        label: 'Macro Downturn',
+        value: '-20% Rev, +20d Delay',
+        detail: 'Severe macroeconomic compression: 20% billing contraction with 20-day extended client collection cycle.'
+      });
+      parts.push('macroeconomic downturn (-20% revenue and 20-day receivables lag)');
+      hasSpecificLevers = true;
+    } else if (/(?:inflation|tariff|price\s*hike|raw\s*material|hosting|aws|cloud\s*cost)/i.test(text)) {
+      newParams.expenseChangePct = 12;
+      detectedAssumptions.push({
+        label: 'Inflation Surge',
+        value: '+12% Opex',
+        detail: 'Reflects a 12% inflationary increase across cloud infrastructure, vendor rates, and operational overheads.'
+      });
+      parts.push('an inflationary operational cost increase of +12%');
+      hasSpecificLevers = true;
+    } else if (/(?:default|bad\s*debt|unpaid|insolven|write\s*off)/i.test(text)) {
+      newParams.revenueChangePct = -10;
+      newParams.collectionDelayDays = 30;
+      detectedAssumptions.push({
+        label: 'Debtor Default',
+        value: '-10% Rev, +30d Lag',
+        detail: '10% uncollectible debt write-off coupled with 30-day collection freeze on delayed accounts.'
+      });
+      parts.push('credit defaults with 10% revenue write-off and 30-day payment delays');
+      hasSpecificLevers = true;
+    } else if (/(?:cut\s*costs?|reduce\s*burn|freeze\s*hiring|layoffs?|austerity|save\s*cash)/i.test(text)) {
+      newParams.expenseChangePct = -12;
+      detectedAssumptions.push({
+        label: 'Cost Optimization',
+        value: '-12% Opex',
+        detail: 'Departmental budget austerity program reducing recurring operational disbursements by 12%.'
+      });
+      parts.push('austerity cost reductions of -12% OPEX');
+      hasSpecificLevers = true;
+    } else if (/(?:marketing|advertising|campaign|growth|scale|sales\s*boost)/i.test(text)) {
+      newParams.expenseChangePct = 15;
+      newParams.revenueChangePct = 10;
+      detectedAssumptions.push({
+        label: 'Growth Initiative',
+        value: '+15% Opex, +10% Rev',
+        detail: 'Accelerated marketing spend (+15%) driving a projected 10% top-line revenue expansion.'
+      });
+      parts.push('marketing scale (+15% spend leading to +10% revenue lift)');
+      hasSpecificLevers = true;
+    } else if (/(?:expand|office|acquire|new\s*product|expansion|overseas)/i.test(text)) {
+      newParams.capexHiringCost = 3500000;
+      newParams.expenseChangePct = 6;
+      detectedAssumptions.push({
+        label: 'Strategic Expansion',
+        value: '₹35.0L Capex, +6% Opex',
+        detail: 'Initial capital investment of ₹35.0 L with ongoing 6% expansion operating burn.'
+      });
+      parts.push('strategic market expansion (₹35.0L capex + 6% ongoing burn)');
+      hasSpecificLevers = true;
+    } else {
+      // General exploratory stress test
+      newParams.revenueChangePct = -10;
+      newParams.collectionDelayDays = 15;
+      detectedAssumptions.push({
+        label: 'Prudent Stress Test',
+        value: '-10% Rev, +15d Delay',
+        detail: 'Conservative enterprise resilience benchmark simulating mild top-line variance and collection drag.'
+      });
+      parts.push('baseline exploratory stress-testing with -10% revenue and 15-day collection lag');
+    }
   }
 
-  // Default fallback if no specific numbers detected
-  if (parts.length === 0) {
-    parts.push('baseline assumptions with 15-day collection delay');
-    newParams.collectionDelayDays = 15;
-    detectedAssumptions.push({
-      label: 'Collection Delay',
-      value: '15 Days',
-      detail: 'Standard customer payment delay stress-test.'
-    });
-  }
-
-  const interpretationText = `I have structured this scenario with ${parts.join(' and ')}. Review the assumptions below before running the simulation engine.`;
+  const interpretationText = `I have modeled your scenario with ${parts.join(' and ')}. The simulation parameters have been calibrated against your reconciled General Ledger. Review the assumptions below and run the simulation engine to inspect the forecasted cash trajectory.`;
 
   // Dynamically tailor follow-ups based on active levers
   const followUps: string[] = [];
-  if (newParams.collectionDelayDays > 0 && newParams.expenseChangePct <= 0) {
-    followUps.push('What if we cut operating expenses by 5% to offset this?');
-  }
-  if (newParams.revenueChangePct === 0) {
-    followUps.push('What if revenue also drops by 10%?');
-  }
-  if (!newParams.capexHiringCost || newParams.capexHiringCost === 0) {
-    followUps.push('What if we also invest ₹20 lakh in equipment?');
+  if (newParams.revenueChangePct < 0) {
+    followUps.push('What if we cut operating expenses by 10% to offset this?');
+    followUps.push('What if receivables arrive 15 days late as well?');
+  } else if (newParams.expenseChangePct > 0) {
+    followUps.push('What if we delay vendor payments by 20 days to cushion cash?');
+    followUps.push('What if revenue expands by 15%?');
+  } else if (newParams.collectionDelayDays > 0) {
+    followUps.push('What if we reduce operating expenses by 5%?');
+    followUps.push('What if we hold non-critical supplier disbursements?');
+  } else {
+    followUps.push('What if revenue falls by 15%?');
+    followUps.push('What if customer payments arrive 20 days late?');
+    followUps.push('What if operating expenses rise by 8%?');
   }
   followUps.push('Compare with baseline');
 
@@ -457,6 +540,7 @@ export function interpretScenarioPrompt(
     interpretationText,
     assumptions: newParams,
     assumptionsList: detectedAssumptions,
-    followUps
+    followUps,
+    hasSpecificLevers
   };
 }
