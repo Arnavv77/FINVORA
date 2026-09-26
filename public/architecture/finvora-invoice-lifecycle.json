@@ -1,0 +1,222 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Duplicate Invoice Detection & Autonomous Approval Lifecycle",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "full-lifecycle",
+        "label": "Full Lifecycle (Steps 1-8)",
+        "focus": ["step1", "step2", "step3", "step4", "step5", "step6", "step7", "step8"],
+        "note": "Complete 8-step lifecycle from OCR intake to manager approval and ledger freeze."
+      },
+      {
+        "id": "risk-and-simulation",
+        "label": "Risk & What-If Modeling",
+        "focus": ["step3", "step4", "step5", "step6"],
+        "note": "Detection of duplicate invoice, financial impact forecasting, and What-If simulation."
+      },
+      {
+        "id": "governance-loop",
+        "label": "Governance & Execution",
+        "focus": ["step6", "step7", "step8"],
+        "note": "Manager sign-off gate with revision loopback and audit ledger execution."
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "step1",
+      "type": "external",
+      "label": "1 · Upload & OCR",
+      "sublabel": "Supplier Invoice ₹6.8L",
+      "tag": "PaddleOCR",
+      "pos": [60, 140],
+      "size": [140, 64]
+    },
+    {
+      "id": "step2",
+      "type": "backend",
+      "label": "2 · Validate & Store",
+      "sublabel": "Correct & Save Record",
+      "tag": "Pydantic · Pandas",
+      "pos": [280, 140],
+      "size": [140, 64]
+    },
+    {
+      "id": "step3",
+      "type": "security",
+      "label": "3 · Duplicate Engine",
+      "sublabel": "Detect & Correlate Match",
+      "tag": "Evidence Engine",
+      "pos": [500, 140],
+      "size": [140, 64]
+    },
+    {
+      "id": "step4",
+      "type": "backend",
+      "label": "4 · Assess Impact",
+      "sublabel": "Schedule & Cash Forecast",
+      "tag": "Prophet · ARIMA",
+      "pos": [720, 140],
+      "size": [140, 64]
+    },
+    {
+      "id": "step5",
+      "type": "cloud",
+      "label": "5 · What-If Scenario",
+      "sublabel": "Hold Invoice Simulation",
+      "tag": "FINVORA AI",
+      "pos": [720, 310],
+      "size": [140, 64]
+    },
+    {
+      "id": "step6",
+      "type": "backend",
+      "label": "6 · Propose Directive",
+      "sublabel": "Protects ₹6.8L Runway",
+      "tag": "Workflow Engine",
+      "pos": [500, 310],
+      "size": [140, 64]
+    },
+    {
+      "id": "step7",
+      "type": "security",
+      "label": "7 · Manager Review",
+      "sublabel": "Approve or Reject Gate",
+      "tag": "Role Governance",
+      "pos": [280, 310],
+      "size": [140, 64]
+    },
+    {
+      "id": "step8",
+      "type": "database",
+      "label": "8 · Apply & Track",
+      "sublabel": "Freeze & Audit Outcome",
+      "tag": "Execution Service",
+      "pos": [60, 310],
+      "size": [140, 64]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "security-group",
+      "label": "Phase 1: Ingestion & Verification",
+      "wraps": ["step1", "step2"]
+    },
+    {
+      "kind": "region",
+      "label": "Phase 2: Risk Intelligence & Modeling",
+      "wraps": ["step3", "step4", "step5", "step6"]
+    },
+    {
+      "kind": "security-group",
+      "label": "Phase 3: Governance & Execution",
+      "wraps": ["step7", "step8"]
+    }
+  ],
+  "connections": [
+    {
+      "id": "s1-to-s2",
+      "from": "step1",
+      "to": "step2",
+      "label": "raw invoice",
+      "variant": "emphasis"
+    },
+    {
+      "id": "s2-to-s3",
+      "from": "step2",
+      "to": "step3",
+      "label": "cleansed data",
+      "variant": "emphasis"
+    },
+    {
+      "id": "s3-to-s4",
+      "from": "step3",
+      "to": "step4",
+      "label": "match flag",
+      "variant": "emphasis"
+    },
+    {
+      "id": "s4-to-s5",
+      "from": "step4",
+      "to": "step5",
+      "label": "cash exposure",
+      "variant": "emphasis",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelDy": 30
+    },
+    {
+      "id": "s5-to-s6",
+      "from": "step5",
+      "to": "step6",
+      "label": "model variance",
+      "variant": "emphasis",
+      "fromSide": "left",
+      "toSide": "right"
+    },
+    {
+      "id": "s6-to-s7",
+      "from": "step6",
+      "to": "step7",
+      "label": "draft proposal",
+      "variant": "emphasis",
+      "fromSide": "left",
+      "toSide": "right"
+    },
+    {
+      "id": "s7-to-s8",
+      "from": "step7",
+      "to": "step8",
+      "label": "Approved",
+      "variant": "emphasis",
+      "fromSide": "left",
+      "toSide": "right"
+    },
+    {
+      "id": "s7-to-s6-revise",
+      "from": "step7",
+      "to": "step6",
+      "label": "Revise & Resubmit",
+      "variant": "dashed",
+      "fromSide": "bottom",
+      "toSide": "bottom"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "1. Intake & Validation",
+      "items": [
+        "PaddleOCR extracts supplier, invoice number, amount, and due date",
+        "Pydantic validator checks errors and saves clean data with source PDF"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "2. Duplicate Detection & Risk",
+      "items": [
+        "Rule AP-002 flags duplicate invoice collision against INV-2024-8841",
+        "Correlates GSTIN, amount match, and 96% semantic description similarity"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "3. Impact & What-If Simulation",
+      "items": [
+        "Prophet & ARIMA models forecast cash flow trough if duplicate is paid",
+        "FINVORA What-If simulation proves ₹6.8L capital saved by holding invoice"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "4. Governance & Execution",
+      "items": [
+        "Finance Manager evaluates proposal evidence and sign-off confidence",
+        "Execution service freezes AP payout, updates dashboard, and logs audit trail"
+      ]
+    }
+  ]
+}

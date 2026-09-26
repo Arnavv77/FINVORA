@@ -1,6 +1,9 @@
 import { AnomalyRecord, DepartmentBudget, CashForecastPoint, FinvoraRecommendation, RiskReasonItem, ForecastRiskLevel } from '../types';
 
-const API_BASE = 'http://127.0.0.1:8000/api';
+const rawBase = (import.meta.env.VITE_API_URL as string | undefined)?.trim() || 'http://127.0.0.1:8000/api';
+const cleanBase = rawBase.replace(/\/+$/, '');
+const API_BASE = cleanBase.endsWith('/api') ? cleanBase : `${cleanBase}/api`;
+
 
 export interface DashboardSummaryResponse {
   total_balance: number;

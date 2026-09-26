@@ -187,13 +187,20 @@ Respond strictly with a valid JSON object (no markdown outside the JSON, no extr
         if r.status_code == 200:
             content = r.json()["choices"][0]["message"]["content"].strip()
             # Clean possible markdown wrap ```json ... ```
-            content = re.sub(r"^```json\s*", "", content)
-            content = re.sub(r"^```\s*", "", content)
+            content = re.sub(r"^```(?:json)?\s*", "", content)
             content = re.sub(r"\s*```$", "", content)
             # Replace accidental $ with ₹
             content = content.replace("$", "₹").replace("USD", "INR")
 
-            parsed = json.loads(content)
+            try:
+                parsed = json.loads(content, strict=False)
+            except Exception:
+                json_match = re.search(r"\{.*\}", content, re.DOTALL)
+                if json_match:
+                    parsed = json.loads(json_match.group(0), strict=False)
+                else:
+                    raise
+
             if "reply" in parsed:
                 return parsed
     except Exception as e:
@@ -487,7 +494,7 @@ Modeled Simulation Result: {json.dumps(simulation_result or {})}
 Provide FINVORA's official strategic recommendation for this specific question.
 Explain:
 1. Executive Decision (what leadership should do)
-2. Feasibility Score (0-100)
+2. Feasibility Score (realistic 70-80 range)
 3. Financial Impact & Runway Buffer
 4. Step-by-step Action Checklist
 5. Contingency Defense / Proposal
@@ -496,7 +503,7 @@ Format strictly as JSON with this schema (NO markdown hash # or asterisks * in s
 {{
   "title": "Clear headline of the recommendation (e.g. Phase Headcount & Ring-fence Q3 Engineering Surplus)",
   "executive_summary": "Crisp 2-3 sentence strategic rationale explaining what to do.",
-  "feasibility_score": 88.5,
+  "feasibility_score": 76.5,
   "financial_impact": "₹6.5L/mo burn offset by Q3 surplus",
   "risk_level": "Low",
   "action_steps": [
@@ -535,17 +542,25 @@ Format strictly as JSON with this schema (NO markdown hash # or asterisks * in s
 
         if r.status_code == 200:
             content = r.json()["choices"][0]["message"]["content"].strip()
-            content = re.sub(r"^```json\s*", "", content)
-            content = re.sub(r"^```\s*", "", content)
+            content = re.sub(r"^```(?:json)?\s*", "", content)
             content = re.sub(r"\s*```$", "", content)
             content = content.replace("$", "₹").replace("USD", "INR")
 
-            parsed = json.loads(content)
+            try:
+                parsed = json.loads(content, strict=False)
+            except Exception:
+                json_match = re.search(r"\{.*\}", content, re.DOTALL)
+                if json_match:
+                    parsed = json.loads(json_match.group(0), strict=False)
+                else:
+                    raise
             if "title" in parsed and "executive_summary" in parsed:
+                raw_score = float(parsed.get("feasibility_score", 76.0))
+                feasibility = round(min(79.5, max(71.0, raw_score if (70.0 <= raw_score <= 80.0) else 71.0 + (abs(raw_score) % 8.5))), 1)
                 return {
                     "title": _clean_markdown_symbols(parsed["title"]),
                     "executive_summary": _clean_markdown_symbols(parsed["executive_summary"]),
-                    "feasibility_score": float(parsed.get("feasibility_score", 88.0)),
+                    "feasibility_score": feasibility,
                     "financial_impact": _clean_markdown_symbols(str(parsed.get("financial_impact", "Verified"))),
                     "risk_level": str(parsed.get("risk_level", "Low")),
                     "action_steps": [_clean_markdown_symbols(s) for s in parsed.get("action_steps", [])],
@@ -578,7 +593,7 @@ def generate_fallback_scenario_recommendation(
         return {
             "title": f"Phased Headcount Onboarding & Budget Ring-Fencing ({count} Hires)",
             "executive_summary": f"Adding {count} employees introduces approximately ₹{burn:.1f}L/month in ongoing operational burn. Supported by current reserves of {cash_str} (14.2 months runway), FINVORA recommends staggering onboarding dates across 45-day milestones and ring-fencing ₹4.5L from Engineering's Q3 cloud surplus to absorb the incremental payroll.",
-            "feasibility_score": 88.0,
+            "feasibility_score": 74.5,
             "financial_impact": f"₹{burn:.1f}L/month Incremental Burn",
             "risk_level": "Low",
             "action_steps": [
@@ -596,7 +611,7 @@ def generate_fallback_scenario_recommendation(
         return {
             "title": "Autonomous Working Capital Defense & Discretionary OPEX Freeze",
             "executive_summary": f"In response to projected sales contraction, FINVORA recommends immediate preservation of liquidity. With available cash of {cash_str}, implementing a temporary 10% freeze on non-essential operational expenditure guarantees maintaining healthy reserves above the ₹20.0L threshold.",
-            "feasibility_score": 92.0,
+            "feasibility_score": 78.2,
             "financial_impact": "Conserves ~₹15.2L Monthly Cash",
             "risk_level": "Moderate",
             "action_steps": [
@@ -614,7 +629,7 @@ def generate_fallback_scenario_recommendation(
         return {
             "title": "Vendor Equipment Financing & Capital Preservation Strategy",
             "executive_summary": f"Rather than executing a single lump-sum cash outlay from current operating reserves ({cash_str}), FINVORA recommends structured vendor lease-to-own terms. This distributes disbursements across 12 months, keeping liquid buffer fully protected.",
-            "feasibility_score": 94.0,
+            "feasibility_score": 73.5,
             "financial_impact": "Avoids Sudden ~₹20L Liquidity Outflow",
             "risk_level": "Low",
             "action_steps": [
@@ -632,7 +647,7 @@ def generate_fallback_scenario_recommendation(
         return {
             "title": "Proactive DSO Compression & Early Settlement Incentive Strategy",
             "executive_summary": f"To counteract customer collection delays, FINVORA recommends introducing a 2% prompt-payment discount for settlement within 10 days and staggering non-critical AP disbursements by 15 days to equalize working capital velocity.",
-            "feasibility_score": 96.0,
+            "feasibility_score": 79.0,
             "financial_impact": "Accelerates ~₹24.6L Inflows by 12 Days",
             "risk_level": "Low",
             "action_steps": [
@@ -649,7 +664,7 @@ def generate_fallback_scenario_recommendation(
     return {
         "title": "Enterprise Liquidity Optimization & Scenario Hedge Directive",
         "executive_summary": f"Based on live enterprise telemetry ({cash_str} available cash across HDFC & ICICI accounts, 14.2 months runway), FINVORA recommends pairing modeled adjustments with dynamic budget reallocations to protect operating margins without restricting operational agility.",
-        "feasibility_score": 90.0,
+        "feasibility_score": 76.0,
         "financial_impact": "Reserves Preserved Above Safe Buffer",
         "risk_level": "Low",
         "action_steps": [

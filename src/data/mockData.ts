@@ -743,7 +743,7 @@ export const INITIAL_DECISION_PROPOSALS: DecisionProposal[] = [
       'Vendor invoice was auto-generated twice due to a webhook retry from their billing system.',
       'No operational disruption will occur since AWS infrastructure capacity is already secured under INV-2024-8841.'
     ],
-    confidence: 97.4,
+    confidence: 78.4,
     status: 'draft',
     requestedBy: 'Pooja Sharma (Finance Analyst)',
     assignedReviewer: 'Rajesh Gopinathan (Finance Manager / CFO)',
@@ -768,7 +768,7 @@ export const INITIAL_DECISION_PROPOSALS: DecisionProposal[] = [
       'Engineering will not need to procure unannounced on-premise hardware before October 15.',
       'CMO commits to capping incremental performance ad spend at ₹4,50,000.'
     ],
-    confidence: 89.0,
+    confidence: 73.2,
     status: 'pending_approval',
     requestedBy: 'Ananya Deshmukh (CMO)',
     assignedReviewer: 'Rajesh Gopinathan (Finance Manager / CFO)',
@@ -793,7 +793,7 @@ export const INITIAL_DECISION_PROPOSALS: DecisionProposal[] = [
       'Datacenter team will complete node mounting within 5 working days.',
       'HyperScale Systems will accept milestone split.'
     ],
-    confidence: 91.5,
+    confidence: 76.5,
     status: 'pending_approval',
     requestedBy: 'Vikramaditya Sen (VP Eng)',
     assignedReviewer: 'Rajesh Gopinathan (Finance Manager / CFO)',
@@ -967,10 +967,10 @@ export function generateCashForecastPoints(hasDuplicateHold: boolean = false): C
     // Normal cyclical enterprise inflows (collections on 1st & 15th)
     const isPayday = i % 15 === 0;
     const isBillingCycle = i % 30 === 5;
-    
+
     let baseInflow = isBillingCycle ? 4500000 : 750000 + (Math.sin(i * 0.3) * 300000);
     let baseOutflow = isPayday ? 4200000 : 650000 + (Math.cos(i * 0.25) * 250000);
-    
+
     if (i === 4 && hasDuplicateHold) {
       baseOutflow = Math.max(0, baseOutflow - 680000);
     }

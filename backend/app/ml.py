@@ -221,8 +221,14 @@ def generate_explanation(risk_type: str, evidence: dict, return_dict: bool = Tru
                         raw_content = raw_content.split("```")[1]
                         if raw_content.startswith("json"):
                             raw_content = raw_content[4:]
-                        raw_content = raw_content.strip()
-                    parsed = json.loads(raw_content)
+                    try:
+                        parsed = json.loads(raw_content, strict=False)
+                    except Exception:
+                        json_match = re.search(r"\{.*\}", raw_content, re.DOTALL)
+                        if json_match:
+                            parsed = json.loads(json_match.group(0), strict=False)
+                        else:
+                            raise
                     if isinstance(parsed, dict) and "explanation" in parsed and "evidence" in parsed:
                         if not return_dict:
                             return parsed["explanation"]

@@ -69,6 +69,8 @@ export const TopBar: React.FC<TopBarProps> = ({ onOpenSidebar }) => {
         return 'Decisions & Approvals';
       case '/data-connections':
         return 'Data Connections';
+      case '/about':
+        return 'About & Architecture';
       case '/settings':
         return 'Settings';
       default:

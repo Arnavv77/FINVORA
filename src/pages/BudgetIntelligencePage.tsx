@@ -84,7 +84,7 @@ export const BudgetIntelligencePage: React.FC = () => {
       ],
       expectedImpact: `Directly cures ${toDept.department} overspend red-flag; preserves overall company budget cap.`,
       assumptions: ['Engineering confirms deferred procurement of secondary lab hardware.'],
-      confidence: 91.0,
+      confidence: 74.5,
       requestedBy: role === 'manager' ? 'Rajesh Gopinathan (Finance Manager)' : 'Pooja Sharma (Analyst)',
       assignedReviewer: 'Rajesh Gopinathan (Finance Manager / CFO)',
       targetEntityId: toDept.id
@@ -196,13 +196,12 @@ export const BudgetIntelligencePage: React.FC = () => {
             return (
               <div
                 key={dept.id}
-                className={`group relative overflow-hidden p-4 rounded-xl border flex flex-col justify-between space-y-4 transition-all ${
-                  isOver
+                className={`group relative overflow-hidden p-4 rounded-xl border flex flex-col justify-between space-y-4 transition-all ${isOver
                     ? 'border-rose-500/35 dark:border-rose-500/45 bg-gradient-to-br from-rose-500/[0.08] via-rose-500/[0.02] to-transparent shadow-[0_0_24px_rgba(244,63,94,0.07)]'
                     : dept.status === 'at_risk'
-                    ? 'bg-amber-500/10 border-amber-500/30'
-                    : 'bg-[var(--card-bg-elevated)] border-[var(--border-subtle)]'
-                }`}
+                      ? 'bg-amber-500/10 border-amber-500/30'
+                      : 'bg-[var(--card-bg-elevated)] border-[var(--border-subtle)]'
+                  }`}
               >
                 {isOver && (
                   <>
@@ -227,9 +226,8 @@ export const BudgetIntelligencePage: React.FC = () => {
                     </div>
                     <div className="w-full h-2 rounded-full bg-[var(--surface-muted)] overflow-hidden">
                       <div
-                        className={`h-full rounded-full transition-all duration-500 ${
-                          isOver ? 'bg-rose-500' : pct > 85 ? 'bg-amber-500' : 'bg-emerald-500'
-                        }`}
+                        className={`h-full rounded-full transition-all duration-500 ${isOver ? 'bg-rose-500' : pct > 85 ? 'bg-amber-500' : 'bg-emerald-500'
+                          }`}
                         style={{ width: `${pct}%` }}
                       />
                     </div>

@@ -10,7 +10,8 @@ import {
   Sliders,
   CheckSquare,
   Network,
-  Settings
+  Settings,
+  Info
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { MagneticDock, type DockItemData } from '../ui/magnetic-dock';
@@ -51,25 +52,27 @@ export const FinvoraDock: React.FC<FinvoraDockProps> = ({
     navigate(path);
   };
 
+  const dockIconClass = "w-5 h-5 text-black dark:text-amber-400 transition-colors duration-150";
+
   const items: DockItemData[] = [
     {
       id: 'overview',
       label: 'Overview',
-      icon: <LayoutDashboard className="w-5 h-5 text-amber-500 dark:text-amber-400" />,
+      icon: <LayoutDashboard className={dockIconClass} />,
       onClick: () => handleNavigate('/'),
       isActive: isOverview
     },
     {
       id: 'financial-data',
       label: 'Financial Data',
-      icon: <Database className="w-5 h-5 text-sky-500" />,
+      icon: <Database className={dockIconClass} />,
       onClick: () => handleNavigate('/financial-data'),
       isActive: location.pathname === '/financial-data'
     },
     {
       id: 'risk-anomalies',
       label: 'Risk & Anomalies',
-      icon: <ShieldAlert className="w-5 h-5 text-rose-500" />,
+      icon: <ShieldAlert className={dockIconClass} />,
       badge: openCriticalRisksCount > 0 ? openCriticalRisksCount : undefined,
       onClick: () => handleNavigate('/risk-anomalies'),
       isActive: location.pathname === '/risk-anomalies'
@@ -77,14 +80,14 @@ export const FinvoraDock: React.FC<FinvoraDockProps> = ({
     {
       id: 'cash-flow',
       label: 'Cash Flow & Forecasting',
-      icon: <TrendingUp className="w-5 h-5 text-emerald-500" />,
+      icon: <TrendingUp className={dockIconClass} />,
       onClick: () => handleNavigate('/cash-flow'),
       isActive: location.pathname === '/cash-flow'
     },
     {
       id: 'ap-expenses',
       label: 'AP & Expenses',
-      icon: <Receipt className="w-5 h-5 text-amber-500" />,
+      icon: <Receipt className={dockIconClass} />,
       badge: pendingInvoicesCount > 0 ? pendingInvoicesCount : undefined,
       onClick: () => handleNavigate('/ap-expenses'),
       isActive: location.pathname === '/ap-expenses'
@@ -92,7 +95,7 @@ export const FinvoraDock: React.FC<FinvoraDockProps> = ({
     {
       id: 'budget-intelligence',
       label: 'Budget Intelligence',
-      icon: <PieChart className="w-5 h-5 text-indigo-500" />,
+      icon: <PieChart className={dockIconClass} />,
       badge: overBudgetDepts > 0 ? overBudgetDepts : undefined,
       onClick: () => handleNavigate('/budget-intelligence'),
       isActive: location.pathname === '/budget-intelligence'
@@ -100,14 +103,14 @@ export const FinvoraDock: React.FC<FinvoraDockProps> = ({
     {
       id: 'what-if',
       label: 'What-If Simulator',
-      icon: <Sliders className="w-5 h-5 text-amber-500" />,
+      icon: <Sliders className={dockIconClass} />,
       onClick: () => handleNavigate('/what-if'),
       isActive: location.pathname === '/what-if'
     },
     {
       id: 'decisions-approvals',
       label: 'Decisions & Approvals',
-      icon: <CheckSquare className="w-5 h-5 text-amber-600 dark:text-amber-400" />,
+      icon: <CheckSquare className={dockIconClass} />,
       badge: pendingProposalsCount > 0 ? pendingProposalsCount : undefined,
       onClick: () => handleNavigate('/decisions-approvals'),
       isActive: location.pathname === '/decisions-approvals'
@@ -115,14 +118,21 @@ export const FinvoraDock: React.FC<FinvoraDockProps> = ({
     {
       id: 'data-connections',
       label: 'Data Connections',
-      icon: <Network className="w-5 h-5 text-teal-500" />,
+      icon: <Network className={dockIconClass} />,
       onClick: () => handleNavigate('/data-connections'),
       isActive: location.pathname === '/data-connections'
     },
     {
+      id: 'about',
+      label: 'About',
+      icon: <Info className={dockIconClass} />,
+      onClick: () => handleNavigate('/about'),
+      isActive: location.pathname === '/about'
+    },
+    {
       id: 'settings',
       label: 'Settings',
-      icon: <Settings className="w-5 h-5 text-stone-500" />,
+      icon: <Settings className={dockIconClass} />,
       onClick: () => handleNavigate('/settings'),
       isActive: location.pathname === '/settings'
     }

@@ -1,0 +1,226 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "FINVORA Autonomous Financial Intelligence Architecture",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "primary-path",
+        "label": "Primary Telemetry Path",
+        "focus": ["client", "gateway", "forecast_engine", "ledger_db"],
+        "note": "Primary financial telemetry flow from the browser client to the durable ledger store."
+      },
+      {
+        "id": "ai-copilot",
+        "label": "AI Strategy & Simulation",
+        "focus": ["gateway", "copilot_sim", "nvidia_nim"],
+        "note": "What-If scenario simulation and autonomous strategic advice powered by NVIDIA NIM."
+      },
+      {
+        "id": "external-sync",
+        "label": "ERP & Banking Ingestion",
+        "focus": ["banking_apis", "gateway", "erp_gateways", "ledger_db"],
+        "note": "Continuous ingestion from live banking feeds and enterprise ERP ledgers."
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "client",
+      "type": "frontend",
+      "label": "FINVORA Web App",
+      "sublabel": "React 19 / Vite SPA",
+      "tag": "Role-Based UI",
+      "pos": [60, 260],
+      "size": [130, 60]
+    },
+    {
+      "id": "gateway",
+      "type": "backend",
+      "label": "FastAPI Gateway",
+      "sublabel": "REST API :8000",
+      "tag": "CORS & Auth",
+      "pos": [280, 260],
+      "size": [130, 60]
+    },
+    {
+      "id": "forecast_engine",
+      "type": "backend",
+      "label": "Forecast Engine",
+      "sublabel": "Prophet & ARIMA",
+      "tag": "ML Cash Models",
+      "pos": [500, 260],
+      "size": [130, 60]
+    },
+    {
+      "id": "ledger_db",
+      "type": "database",
+      "label": "Ledger Data Store",
+      "sublabel": "SQLite / In-Memory",
+      "tag": "8,690+ Records",
+      "pos": [720, 260],
+      "size": [130, 60]
+    },
+    {
+      "id": "banking_apis",
+      "type": "external",
+      "label": "Open Banking APIs",
+      "sublabel": "HDFC & ICICI Feeds",
+      "tag": "Bank Reconcile",
+      "pos": [280, 100],
+      "size": [130, 60]
+    },
+    {
+      "id": "erp_gateways",
+      "type": "external",
+      "label": "Enterprise ERPs",
+      "sublabel": "Zoho / Tally / SAP",
+      "tag": "AP & Invoices",
+      "pos": [720, 100],
+      "size": [130, 60]
+    },
+    {
+      "id": "copilot_sim",
+      "type": "backend",
+      "label": "AI Copilot & Sim",
+      "sublabel": "What-If & Reasoning",
+      "tag": "Heuristics & Guard",
+      "pos": [500, 420],
+      "size": [130, 60]
+    },
+    {
+      "id": "nvidia_nim",
+      "type": "cloud",
+      "label": "NVIDIA NIM Cloud",
+      "sublabel": "Llama-3.1-70B API",
+      "tag": "Autonomous LLM",
+      "pos": [720, 420],
+      "size": [130, 60]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "security-group",
+      "label": "Client Browser Boundary",
+      "wraps": ["client"]
+    },
+    {
+      "kind": "region",
+      "label": "FINVORA Enterprise Core (Secure VPC)",
+      "wraps": ["gateway", "forecast_engine", "ledger_db", "copilot_sim"]
+    },
+    {
+      "kind": "security-group",
+      "label": "External Banking Gateway",
+      "wraps": ["banking_apis"]
+    },
+    {
+      "kind": "security-group",
+      "label": "External ERP Ecosystem",
+      "wraps": ["erp_gateways"]
+    },
+    {
+      "kind": "security-group",
+      "label": "External AI Provider",
+      "wraps": ["nvidia_nim"]
+    }
+  ],
+  "connections": [
+    {
+      "id": "client-to-gateway",
+      "from": "client",
+      "to": "gateway",
+      "label": "HTTPS / REST",
+      "variant": "emphasis"
+    },
+    {
+      "id": "gateway-to-forecast",
+      "from": "gateway",
+      "to": "forecast_engine",
+      "label": "cash telemetry",
+      "variant": "emphasis"
+    },
+    {
+      "id": "forecast-to-ledger",
+      "from": "forecast_engine",
+      "to": "ledger_db",
+      "label": "read/write state",
+      "variant": "emphasis"
+    },
+    {
+      "id": "banking-to-gateway",
+      "from": "banking_apis",
+      "to": "gateway",
+      "label": "bank webhooks",
+      "variant": "dashed",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelDy": 30
+    },
+    {
+      "id": "erp-to-ledger",
+      "from": "erp_gateways",
+      "to": "ledger_db",
+      "label": "invoice sync",
+      "variant": "dashed",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelDy": 30
+    },
+    {
+      "id": "gateway-to-copilot",
+      "from": "gateway",
+      "to": "copilot_sim",
+      "label": "scenario params",
+      "fromSide": "bottom",
+      "toSide": "left"
+    },
+    {
+      "id": "copilot-to-nim",
+      "from": "copilot_sim",
+      "to": "nvidia_nim",
+      "label": "inference API"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Client Tier & UX Governance",
+      "items": [
+        "React 19 / Vite SPA with optimistic UI updates & localStorage persistence",
+        "Dual governance roles: Finance Analyst (Submitter) & Finance Manager (Approver)",
+        "Executive Dashboards: Cash Runway, AP Expenses & Budget Intelligence"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Enterprise Core Runtime",
+      "items": [
+        "FastAPI REST API handling schema validation and ledger access",
+        "Hybrid Prophet & ARIMA ML pipeline generating 30/60/90-day cash projections",
+        "What-If Simulator with Monte Carlo liquidity stress-testing & capex shocks",
+        "Automated anomaly scanner: duplicate invoice hash matching & risk scoring"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "External AI & Data Integrations",
+      "items": [
+        "NVIDIA NIM Cloud hosting Llama-3.1-70B for autonomous strategic reasoning",
+        "Deterministic fallback rule-engine active when external LLM is unreachable",
+        "HDFC & ICICI Open Banking feeds syncing daily reconciled statement telemetry",
+        "Enterprise ERP integrations (Zoho Books, Tally, SAP) for AP invoice tracking"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Security & Trust Boundaries",
+      "items": [
+        "Zero-trust client perimeter: role-enforced approval gating on disbursements",
+        "Private enterprise VPC isolates ledger storage and analytical models",
+        "Outbound TLS-encrypted webhooks for external banking and ERP ledger sync"
+      ]
+    }
+  ]
+}

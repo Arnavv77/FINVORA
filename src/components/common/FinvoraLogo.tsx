@@ -56,35 +56,35 @@ export const FinvoraLogo: React.FC<FinvoraLogoProps> = ({
           <defs>
             {/* Top ribbon: Bright Cyan to Vibrant Royal Blue */}
             <linearGradient id="fl-ribbon-top" x1="20" y1="20" x2="80" y2="40" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stop-color="#38BDF8" />
-              <stop offset="50%" stop-color="#2563EB" />
-              <stop offset="100%" stop-color="#1D4ED8" />
+              <stop offset="0%" stopColor="#38BDF8" />
+              <stop offset="50%" stopColor="#2563EB" />
+              <stop offset="100%" stopColor="#1D4ED8" />
             </linearGradient>
 
             {/* Mid ribbon fold: Royal Blue to Indigo to Purple */}
             <linearGradient id="fl-ribbon-mid" x1="40" y1="30" x2="70" y2="55" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stop-color="#3B82F6" />
-              <stop offset="50%" stop-color="#6366F1" />
-              <stop offset="100%" stop-color="#8B5CF6" />
+              <stop offset="0%" stopColor="#3B82F6" />
+              <stop offset="50%" stopColor="#6366F1" />
+              <stop offset="100%" stopColor="#8B5CF6" />
             </linearGradient>
 
             {/* Lower Stem: Deep Indigo to Violet-Purple */}
             <linearGradient id="fl-ribbon-bot" x1="40" y1="50" x2="55" y2="80" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stop-color="#4F46E5" />
-              <stop offset="100%" stop-color="#7C3AED" />
+              <stop offset="0%" stopColor="#4F46E5" />
+              <stop offset="100%" stopColor="#7C3AED" />
             </linearGradient>
 
             {/* Orbital Ring: Mint Emerald to Neon Cyan */}
             <linearGradient id="fl-orbit" x1="25" y1="55" x2="75" y2="45" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stop-color="#34D399" />
-              <stop offset="60%" stop-color="#22D3EE" />
-              <stop offset="100%" stop-color="#38BDF8" />
+              <stop offset="0%" stopColor="#34D399" />
+              <stop offset="60%" stopColor="#22D3EE" />
+              <stop offset="100%" stopColor="#38BDF8" />
             </linearGradient>
 
             {/* 3D Bar Chart Gradient */}
             <linearGradient id="fl-bar" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#FFFFFF" />
-              <stop offset="100%" stop-color="#CFFAFE" />
+              <stop offset="0%" stopColor="#FFFFFF" />
+              <stop offset="100%" stopColor="#CFFAFE" />
             </linearGradient>
 
             {/* Sparkle glow filter */}

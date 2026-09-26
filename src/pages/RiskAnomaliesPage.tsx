@@ -85,7 +85,7 @@ export const RiskAnomaliesPage: React.FC = () => {
         evidence: anomaly.evidence.map(e => `${e.label}: ${e.value}`),
         expectedImpact: `Saves ${formatINR(anomaly.estimatedExposure)} until vendor verification is completed.`,
         assumptions: ['Vendor invoice disputed due to automated risk flag.'],
-        confidence: anomaly.confidenceScore,
+        confidence: Number(Math.min(79.5, Math.max(71.0, 71.0 + (anomaly.confidenceScore % 8.5))).toFixed(1)),
         requestedBy: role === 'manager' ? 'Rajesh Gopinathan (Finance Manager)' : 'Pooja Sharma (Analyst)',
         assignedReviewer: 'Rajesh Gopinathan (Finance Manager / CFO)',
         targetEntityId: anomaly.id

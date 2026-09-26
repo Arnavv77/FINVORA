@@ -88,7 +88,7 @@ interface FinancialContextType {
   assignAnomaly: (id: string, assignee: string) => void;
   placeInvoiceHold: (invoiceId: string) => void;
   reallocateBudget: (fromDeptId: string, toDeptId: string, amount: number, reason: string) => void;
-  
+
   // Proposals & Approval Workflow
   createProposal: (proposal: Omit<DecisionProposal, 'id' | 'createdAt' | 'updatedAt' | 'status'>) => DecisionProposal;
   submitProposalForApproval: (id: string) => void;
@@ -220,7 +220,25 @@ export const FinancialProvider: React.FC<{ children: ReactNode }> = ({ children 
 
   const [proposals, setProposals] = useState<DecisionProposal[]>(() => {
     const saved = localStorage.getItem(`${LOCAL_STORAGE_KEY}_proposals`);
-    return saved ? JSON.parse(saved) : INITIAL_DECISION_PROPOSALS;
+    if (saved) {
+      try {
+        const parsed: DecisionProposal[] = JSON.parse(saved);
+        // Ensure confidence scores reflect 70-80% variation
+        return parsed.map(p => {
+          if (p.id === 'PROP-2024-001') return { ...p, confidence: 78.4 };
+          if (p.id === 'PROP-2024-002') return { ...p, confidence: 73.2 };
+          if (p.id === 'PROP-2024-003') return { ...p, confidence: 76.5 };
+          if (p.confidence > 80 || p.confidence < 70) {
+            const adjusted = 71.0 + ((Math.abs(p.confidence) % 80) / 80) * 8.5;
+            return { ...p, confidence: Number(adjusted.toFixed(1)) };
+          }
+          return p;
+        });
+      } catch {
+        return INITIAL_DECISION_PROPOSALS;
+      }
+    }
+    return INITIAL_DECISION_PROPOSALS;
   });
 
   const [workflowRules, setWorkflowRules] = useState<WorkflowRule[]>(() => {
@@ -506,8 +524,14 @@ export const FinancialProvider: React.FC<{ children: ReactNode }> = ({ children 
 
   // Proposal Workflow
   const createProposal = (proposalData: Omit<DecisionProposal, 'id' | 'createdAt' | 'updatedAt' | 'status'>) => {
+    const rawConf = proposalData.confidence;
+    const normalizedConfidence = (rawConf > 80 || rawConf < 70)
+      ? Number((71.5 + (Math.abs(rawConf) % 8.0)).toFixed(1))
+      : rawConf;
+
     const newProposal: DecisionProposal = {
       ...proposalData,
+      confidence: normalizedConfidence,
       id: `PROP-2024-${Math.floor(100 + Math.random() * 900)}`,
       createdAt: new Date().toLocaleDateString('en-IN') + ' ' + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) + ' IST',
       updatedAt: new Date().toLocaleDateString('en-IN') + ' ' + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) + ' IST',
@@ -592,7 +616,7 @@ export const FinancialProvider: React.FC<{ children: ReactNode }> = ({ children 
       setInvoices(prev => prev.map(inv => inv.id === 'INV-2024-8849' ? { ...inv, status: 'on_hold' } : inv));
       setPaymentSchedule(prev => prev.map(item => item.invoiceId === 'INV-2024-8849' ? { ...item, status: 'on_hold' } : item));
       updateAnomalyStatus('ANOM-2024-001', 'held', 'Payment hold executed following formal proposal approval.');
-      
+
       setProposals(prev => prev.map(p => p.id === id ? {
         ...p,
         status: 'executed',

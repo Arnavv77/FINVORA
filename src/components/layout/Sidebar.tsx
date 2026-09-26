@@ -11,6 +11,7 @@ import {
   CheckSquare,
   Network,
   Settings,
+  Info,
   X
 } from 'lucide-react';
 import { useFinancial } from '../../context/FinancialContext';
@@ -85,6 +86,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       to: '/data-connections',
       label: 'Data Connections',
       icon: <Network className="w-[18px] h-[18px] shrink-0" />
+    },
+    {
+      to: '/about',
+      label: 'About',
+      icon: <Info className="w-[18px] h-[18px] shrink-0" />
     },
     {
       to: '/settings',

@@ -131,7 +131,7 @@ function DockItem({
                 }}
             >
                 {/* Icon */}
-                <div aria-hidden="true" className="w-[60%] h-[60%] flex items-center justify-center text-neutral-700 dark:text-white">
+                <div aria-hidden="true" className="w-[60%] h-[60%] flex items-center justify-center text-black dark:text-amber-400">
                     {item.icon}
                 </div>
 
@@ -179,7 +179,7 @@ function DockItem({
                         className={cn(
                             "absolute -bottom-2",
                             "w-1.5 h-1.5 rounded-full",
-                            "bg-neutral-600 dark:bg-white/80"
+                            "bg-black dark:bg-amber-400"
                         )}
                     />
                 )}

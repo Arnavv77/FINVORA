@@ -95,8 +95,8 @@ const CleanFormattedMessage: React.FC<{ text: string }> = ({ text }) => {
 
         // Header detection (e.g., "Simulation Executed" or "Key Financial Drivers")
         const isHeader = !isBullet && (
-          line.trim().startsWith('#') || 
-          cleanLine.endsWith(':') || 
+          line.trim().startsWith('#') ||
+          cleanLine.endsWith(':') ||
           cleanLine.toLowerCase().includes('simulation executed') ||
           cleanLine.toLowerCase().includes('key financial drivers') ||
           cleanLine.toLowerCase().includes('scenario stress-test')
@@ -537,8 +537,8 @@ export const WhatIfSimulatorPage: React.FC = () => {
       leverDescriptions.push(`${activeParams.paymentRescheduleDays}d Vendor Reschedule`);
     }
 
-    const scenarioTitle = leverDescriptions.length > 0 
-      ? leverDescriptions.join(', ') 
+    const scenarioTitle = leverDescriptions.length > 0
+      ? leverDescriptions.join(', ')
       : activeParams.name || 'Custom Scenario';
 
     let summaryText = `Simulation Executed: ${scenarioTitle}\n\n`;
@@ -639,7 +639,7 @@ export const WhatIfSimulatorPage: React.FC = () => {
         'Enforces temporary discretionary freeze across non-critical software subscriptions.',
         'Requires treasury approval for invoices exceeding ₹5,00,000.'
       ],
-      confidence: 88.5,
+      confidence: 77.5,
       requestedBy: role === 'manager' ? 'Rajesh Gopinathan (Finance Manager)' : 'Pooja Sharma (Analyst)',
       assignedReviewer: 'Rajesh Gopinathan (Finance Manager / CFO)'
     });
@@ -689,7 +689,9 @@ export const WhatIfSimulatorPage: React.FC = () => {
         'Strategic phased milestones as determined by FINVORA intelligence engine.',
         'Active working capital reserve lock.'
       ],
-      confidence: rec.feasibility_score || 88.5,
+      confidence: rec.feasibility_score
+        ? Number(Math.min(79.5, Math.max(71.0, rec.feasibility_score > 80 ? 71.0 + (rec.feasibility_score % 8) : rec.feasibility_score)).toFixed(1))
+        : 76.5,
       requestedBy: role === 'manager' ? 'Rajesh Gopinathan (Finance Manager)' : 'Pooja Sharma (Analyst)',
       assignedReviewer: 'Rajesh Gopinathan (Finance Manager / CFO)'
     });
@@ -858,21 +860,19 @@ export const WhatIfSimulatorPage: React.FC = () => {
           <div className="flex lg:hidden rounded-xl bg-[var(--surface-muted)] p-1 border border-[var(--divider)] text-xs font-semibold">
             <button
               onClick={() => setActiveMobileTab('conversation')}
-              className={`flex-1 py-1.5 rounded-lg transition-all ${
-                activeMobileTab === 'conversation'
+              className={`flex-1 py-1.5 rounded-lg transition-all ${activeMobileTab === 'conversation'
                   ? 'bg-[var(--card-bg-elevated)] text-[var(--text-primary)] shadow-xs'
                   : 'text-[var(--text-muted)]'
-              }`}
+                }`}
             >
               Conversation ({messages.length})
             </button>
             <button
               onClick={() => setActiveMobileTab('results')}
-              className={`flex-1 py-1.5 rounded-lg transition-all ${
-                activeMobileTab === 'results'
+              className={`flex-1 py-1.5 rounded-lg transition-all ${activeMobileTab === 'results'
                   ? 'bg-[var(--card-bg-elevated)] text-[var(--text-primary)] shadow-xs'
                   : 'text-[var(--text-muted)]'
-              }`}
+                }`}
             >
               Assumptions & Results
             </button>
@@ -881,9 +881,8 @@ export const WhatIfSimulatorPage: React.FC = () => {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
             {/* LEFT COLUMN: FINVORA Scenario Conversation (~40% = 5 cols) */}
             <div
-              className={`lg:col-span-5 flex flex-col h-[700px] rounded-2xl glass-card overflow-hidden border border-[var(--divider)] ${
-                activeMobileTab === 'results' ? 'hidden lg:flex' : 'flex'
-              }`}
+              className={`lg:col-span-5 flex flex-col h-[700px] rounded-2xl glass-card overflow-hidden border border-[var(--divider)] ${activeMobileTab === 'results' ? 'hidden lg:flex' : 'flex'
+                }`}
             >
               {/* Chat Header */}
               <div className="px-4 py-3 border-b border-[var(--divider)] bg-[var(--card-bg-elevated)] flex items-center justify-between shrink-0">
@@ -920,11 +919,10 @@ export const WhatIfSimulatorPage: React.FC = () => {
                     </div>
 
                     <div
-                      className={`p-3.5 rounded-2xl max-w-[92%] leading-relaxed ${
-                        msg.sender === 'user'
+                      className={`p-3.5 rounded-2xl max-w-[92%] leading-relaxed ${msg.sender === 'user'
                           ? 'bg-amber-500 text-stone-950 font-medium rounded-tr-xs shadow-xs'
                           : 'bg-[var(--card-bg-elevated)] text-[var(--text-primary)] border border-[var(--divider)] rounded-tl-xs shadow-xs'
-                      }`}
+                        }`}
                     >
                       {msg.sender === 'user' ? (
                         <p className="whitespace-pre-wrap">{msg.text.replace(/[*#]/g, '')}</p>
@@ -1121,9 +1119,8 @@ export const WhatIfSimulatorPage: React.FC = () => {
 
             {/* RIGHT COLUMN: Scenario Assumptions & Results (~60% = 7 cols) */}
             <div
-              className={`lg:col-span-7 space-y-5 ${
-                activeMobileTab === 'conversation' ? 'hidden lg:block' : 'block'
-              }`}
+              className={`lg:col-span-7 space-y-5 ${activeMobileTab === 'conversation' ? 'hidden lg:block' : 'block'
+                }`}
             >
               {/* If scenario has NOT run yet, show Proposed Assumptions Review Card */}
               {!hasRunScenario ? (
@@ -1201,11 +1198,10 @@ export const WhatIfSimulatorPage: React.FC = () => {
                         {formatINRCompact(simulationResult.endingCash)}
                       </div>
                       <span
-                        className={`text-[11px] font-mono font-medium block mt-0.5 ${
-                          simulationResult.deltaCash >= 0
+                        className={`text-[11px] font-mono font-medium block mt-0.5 ${simulationResult.deltaCash >= 0
                             ? 'text-emerald-600 dark:text-emerald-400'
                             : 'text-rose-500'
-                        }`}
+                          }`}
                       >
                         {simulationResult.deltaCash >= 0 ? '+' : ''}
                         {formatINRCompact(simulationResult.deltaCash)} vs Base
@@ -1223,29 +1219,27 @@ export const WhatIfSimulatorPage: React.FC = () => {
                     </div>
 
                     <div
-                      className={`p-3.5 rounded-2xl glass-card border ${
-                        simulationResult.isNegativeCashBreached
+                      className={`p-3.5 rounded-2xl glass-card border ${simulationResult.isNegativeCashBreached
                           ? 'border-rose-500/50 bg-rose-500/10'
                           : simulationResult.isReserveBreached
-                          ? 'border-amber-500/50 bg-amber-500/10'
-                          : 'border-emerald-500/30'
-                      }`}
+                            ? 'border-amber-500/50 bg-amber-500/10'
+                            : 'border-emerald-500/30'
+                        }`}
                     >
                       <span className="text-[11px] text-[var(--text-muted)] block">Reserve Status</span>
                       <div
-                        className={`text-sm font-bold mt-0.5 ${
-                          simulationResult.isNegativeCashBreached
+                        className={`text-sm font-bold mt-0.5 ${simulationResult.isNegativeCashBreached
                             ? 'text-rose-500'
                             : simulationResult.isReserveBreached
-                            ? 'text-amber-500'
-                            : 'text-emerald-600 dark:text-emerald-400'
-                        }`}
+                              ? 'text-amber-500'
+                              : 'text-emerald-600 dark:text-emerald-400'
+                          }`}
                       >
                         {simulationResult.isNegativeCashBreached
                           ? 'Negative Cash'
                           : simulationResult.isReserveBreached
-                          ? 'Reserve Breach'
-                          : 'Buffer Retained'}
+                            ? 'Reserve Breach'
+                            : 'Buffer Retained'}
                       </div>
                       <span className="text-[11px] text-[var(--text-muted)] block mt-0.5">
                         {simulationResult.shortfallDate
