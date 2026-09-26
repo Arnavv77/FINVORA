@@ -15,7 +15,8 @@ import {
   RotateCcw,
   User,
   Settings,
-  ChevronDown
+  ChevronDown,
+  LogOut
 } from 'lucide-react';
 import { useFinancial } from '../../context/FinancialContext';
 import { ConfirmDialog } from '../common/ConfirmDialog';
@@ -41,7 +42,8 @@ export const TopBar: React.FC<TopBarProps> = ({ onOpenSidebar }) => {
     anomalies,
     openCriticalRisksCount,
     actualTheme,
-    toggleTheme
+    toggleTheme,
+    logout
   } = useFinancial();
 
   const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -320,6 +322,17 @@ export const TopBar: React.FC<TopBarProps> = ({ onOpenSidebar }) => {
                     >
                       <RotateCcw className="w-3.5 h-3.5" />
                       <span>Reset Demo Data</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setProfileMenuOpen(false);
+                        logout();
+                        navigate('/login');
+                      }}
+                      className="w-full text-left px-2 py-1.5 rounded-lg text-[var(--text-secondary)] hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-colors flex items-center gap-2"
+                    >
+                      <LogOut className="w-3.5 h-3.5" />
+                      <span>Sign Out</span>
                     </button>
                   </div>
                 </div>

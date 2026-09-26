@@ -48,6 +48,11 @@ interface Toast {
 }
 
 interface FinancialContextType {
+  // Authentication
+  isAuthenticated: boolean;
+  login: (email?: string) => void;
+  logout: () => void;
+
   // Role & Workspace
   role: UserRole;
   setRole: (role: UserRole) => void;
@@ -130,6 +135,25 @@ const FinancialContext = createContext<FinancialContextType | undefined>(undefin
 const LOCAL_STORAGE_KEY = 'FINVORA_APP_STATE_V1';
 
 export const FinancialProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  // Authentication state
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    return localStorage.getItem('FINVORA_AUTHENTICATED') === 'true';
+  });
+
+  const login = (userEmail?: string) => {
+    setIsAuthenticated(true);
+    localStorage.setItem('FINVORA_AUTHENTICATED', 'true');
+    if (userEmail) {
+      localStorage.setItem('FINVORA_USER_EMAIL', userEmail);
+    }
+  };
+
+  const logout = () => {
+    setIsAuthenticated(false);
+    localStorage.removeItem('FINVORA_AUTHENTICATED');
+    localStorage.removeItem('FINVORA_USER_EMAIL');
+  };
+
   // Load saved state or defaults
   const [role, setRoleState] = useState<UserRole>(() => {
     return (localStorage.getItem('FINVORA_USER_ROLE') as UserRole) || 'analyst';
@@ -973,7 +997,10 @@ export const FinancialProvider: React.FC<{ children: ReactNode }> = ({ children 
         showToast,
         resetDemoData,
         duplicateHoldExecuted,
-        isBackendConnected
+        isBackendConnected,
+        isAuthenticated,
+        login,
+        logout
       }}
     >
       {children}

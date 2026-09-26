@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, ChevronRight, Play, Layers } from 'lucide-react';
 import { FinvoraLogo } from '../common/FinvoraLogo';
+import { useFinancial } from '../../context/FinancialContext';
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
+  const { login } = useFinancial();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -21,6 +23,7 @@ export const LoginPage: React.FC = () => {
     setEmailError('');
     setIsLoading(true);
     setTimeout(() => {
+      login(email);
       navigate('/');
     }, 500);
   };
@@ -28,6 +31,7 @@ export const LoginPage: React.FC = () => {
   const handleDemoSignIn = () => {
     setIsLoading(true);
     setTimeout(() => {
+      login('cfo.demo@aethelgard.in');
       navigate('/');
     }, 300);
   };
@@ -88,7 +92,10 @@ export const LoginPage: React.FC = () => {
           {/* Action Button Row */}
           <div className="flex flex-wrap items-center gap-3.5 pt-1">
             <button
-              onClick={() => navigate('/')}
+              onClick={() => {
+                login('cfo.demo@aethelgard.in');
+                navigate('/');
+              }}
               className="px-5 py-2.5 rounded-full font-bold text-xs sm:text-sm text-white bg-blue-600 hover:bg-blue-500 shadow-xl shadow-blue-600/40 hover:shadow-blue-600/60 transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
             >
               <span>Explore FINVORA</span>
